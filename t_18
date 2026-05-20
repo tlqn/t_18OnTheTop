@@ -37,7 +37,7 @@ end
 
 -- ====== T18 HTTP Relay (لا يمر بشات روبلوكس) ======
 -- ✅ سيرفر دائم لا ينام
-local T18_API_BASE = "https://investment-robertson-approximately-rated.trycloudflare.com/api/t18"
+local T18_API_BASE = "http://localhost:3747/api/t18"
 local HttpService_T18 = game:GetService("HttpService")
 
 local function t18_getHttpFn()
@@ -213,6 +213,7 @@ local SpectateNameLabel = nil
 local SpectateWarningLabel = nil
 local SpectatePlayerRemovingConnection = nil
 local SavedLocation = nil
+local _Hang = {running=false, savedCF=nil, activConn=nil, remConn=nil, prefix="كلب", flingPos=Vector3.new(999999999,999999999,999999999), chatCmd="/e ,char me"}
 
 local characterConnections = {}
 local viewportConnection = nil
@@ -944,7 +945,11 @@ SpeedLabel.Parent = ContentPanel
 
 local TeleportBtn = makeButton("TeleportBtn", "تنقل", UDim2.new(0, 168, 0, 38), UDim2.new(0, 4, 0, 274), Theme.ButtonBlue, Theme.Accent)
 local SpectateBtn = makeButton("SpectateBtn", "مشاهدة", UDim2.new(0, 168, 0, 38), UDim2.new(0, 190, 0, 274), Theme.ButtonDefault, Theme.ButtonGreen)
-local SavePlaceBtn = makeButton("SavePlaceBtn", "حفظ مكاني", UDim2.new(0, 168, 0, 38), UDim2.new(1, -172, 0, 274), Theme.ButtonDefaultAlt, Theme.ButtonOrange)
+local SavePlaceBtn  = makeButton("SavePlaceBtn",  "حفظ مكاني", UDim2.new(0, 168, 0, 38), UDim2.new(1, -172, 0, 274), Theme.ButtonDefaultAlt, Theme.ButtonOrange)
+local HangAutoBtn   = makeButton("HangAutoBtn",   "تعليق",     UDim2.new(0, 168, 0, 38), UDim2.new(0, 4,    0, 274), Theme.ButtonDefault,    Theme.ButtonRed)
+_Hang.freezeBtn     = makeButton("FreezeOnlyBtn","تجميد",     UDim2.new(0, 168, 0, 38), UDim2.new(0, 4,    0, 274), Theme.ButtonDefault,    Theme.ButtonBlue)
+_Hang.cuffBtn       = makeButton("CuffOnlyBtn",  "كلبش",      UDim2.new(0, 168, 0, 38), UDim2.new(0, 4,    0, 274), Theme.ButtonDefault,    Theme.ButtonGreen)
+_Hang.pullBtn        = makeButton("PullBtn",       "سحب",       UDim2.new(0, 168, 0, 38), UDim2.new(0, 4,    0, 274), Theme.ButtonDefault,    Theme.ButtonOrange)
 
 PanelPadding:Destroy()
 SectionLabel:Destroy()
@@ -1424,19 +1429,19 @@ local function sendChatToAll(messageText)
     })
 end
 
-local chatSendCooldown = false
+local _Flags = {chatCooldown=false, hdCopy=false}
 local function trySendChatFromInput()
-    if chatSendCooldown then return end
+    if _Flags.chatCooldown then return end
     local txt = ChatInput.Text
     if not txt or #txt == 0 then return end
-    chatSendCooldown = true
+    _Flags.chatCooldown = true
     local sent = sendChatToAll(txt)
     if sent then
         ChatInput.Text = ""
     else
         addChatMessage("النظام", "ما قدرت أرسل الرسالة — تأكد إن المُشغِّل يدعم HTTP")
     end
-    task.delay(0.8, function() chatSendCooldown = false end)
+    task.delay(0.8, function() _Flags.chatCooldown = false end)
 end
 
 ChatSendBtn.MouseButton1Click:Connect(trySendChatFromInput)
@@ -2308,14 +2313,41 @@ SpectateBtn.Parent = TargetPage
 SpectateBtn.Size = UDim2.new(0.5, -14, 0, 38)
 SpectateBtn.Position = UDim2.new(0.5, 4, 0, 188)
 
-SavePlaceBtn.Parent = TargetPage
-SavePlaceBtn.Size = UDim2.new(1, -20, 0, 38)
-SavePlaceBtn.Position = UDim2.new(0, 10, 0, 232)
+
+HangAutoBtn.Parent = TargetPage
+HangAutoBtn.Size = UDim2.new(0.5, -14, 0, 38)
+HangAutoBtn.Position = UDim2.new(0.5, 4, 0, 254)
+
+-- رسالة "اوامر شاليه محمد" فوق صف تعليق وتجميد
+do
+    local shaliLabel = Instance.new("TextLabel")
+    shaliLabel.Size = UDim2.new(1, -20, 0, 20)
+    shaliLabel.Position = UDim2.new(0, 10, 0, 232)
+    shaliLabel.BackgroundTransparency = 1
+    shaliLabel.Text = "اوامر شاليه محمد"
+    shaliLabel.TextColor3 = Color3.fromRGB(180, 20, 30)
+    shaliLabel.TextXAlignment = Enum.TextXAlignment.Center
+    shaliLabel.Font = Enum.Font.GothamBold
+    shaliLabel.TextSize = 13
+    shaliLabel.Parent = TargetPage
+end
+
+_Hang.freezeBtn.Parent   = TargetPage
+_Hang.freezeBtn.Size     = UDim2.new(0.5, -14, 0, 38)
+_Hang.freezeBtn.Position = UDim2.new(0,    10,  0, 254)
+
+_Hang.cuffBtn.Parent   = TargetPage
+_Hang.cuffBtn.Size     = UDim2.new(0.5, -14, 0, 38)
+_Hang.cuffBtn.Position = UDim2.new(0,    10, 0, 298)
+
+_Hang.pullBtn.Parent   = TargetPage
+_Hang.pullBtn.Size     = UDim2.new(0.5, -14, 0, 38)
+_Hang.pullBtn.Position = UDim2.new(0.5,   4,  0, 298)
 
 -- حقل الـ prefix لـ HD Admin
 local HdPrefixLabel = Instance.new("TextLabel")
 HdPrefixLabel.Size = UDim2.new(1, -20, 0, 18)
-HdPrefixLabel.Position = UDim2.new(0, 10, 0, 278)
+HdPrefixLabel.Position = UDim2.new(0, 10, 0, 344)
 HdPrefixLabel.BackgroundTransparency = 1
 HdPrefixLabel.Text = "Prefix الـ HD (تلقائي أو يدوي)"
 HdPrefixLabel.TextColor3 = Theme.Muted
@@ -2327,7 +2359,7 @@ HdPrefixLabel.Parent = TargetPage
 local HdPrefixInput = Instance.new("TextBox")
 HdPrefixInput.Name = "HdPrefixInput"
 HdPrefixInput.Size = UDim2.new(0.38, -4, 0, 38)
-HdPrefixInput.Position = UDim2.new(0, 10, 0, 298)
+HdPrefixInput.Position = UDim2.new(0, 10, 0, 364)
 HdPrefixInput.BackgroundColor3 = Theme.Input
 HdPrefixInput.BackgroundTransparency = 0.2
 HdPrefixInput.PlaceholderText = "مثال: ,"
@@ -2359,7 +2391,7 @@ pcall(function()
     tryGet("HD_Admin","Settings","Prefix")
 end)
 
-local HdCopyBtn = makeButton("HdCopyBtn", "نسخ HD", UDim2.new(0.6, -14, 0, 38), UDim2.new(0.4, 4, 0, 298), Theme.ButtonDefault, Theme.ButtonGreen)
+local HdCopyBtn = makeButton("HdCopyBtn", "نسخ HD", UDim2.new(0.6, -14, 0, 38), UDim2.new(0.4, 4, 0, 364), Theme.ButtonDefault, Theme.ButtonGreen)
 HdCopyBtn.Parent = TargetPage
 
 
@@ -2370,7 +2402,7 @@ TargetScrollFrame.BackgroundTransparency = 1
 TargetScrollFrame.BorderSizePixel = 0
 TargetScrollFrame.ScrollBarThickness = isTouchDevice and 3 or 4
 TargetScrollFrame.ScrollBarImageColor3 = Theme.Active
-TargetScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 394)
+TargetScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 460)
 TargetScrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y
 TargetScrollFrame.ElasticBehavior = Enum.ElasticBehavior.Always
 TargetScrollFrame.Parent = TargetPage
@@ -2400,6 +2432,10 @@ SpeedLabel.Parent = PlayerPage
 SpeedLabel.Size = UDim2.new(1, -20, 0, 20)
 SpeedLabel.Position = UDim2.new(0, 10, 0, 144)
 
+SavePlaceBtn.Parent = PlayerPage
+SavePlaceBtn.Size = UDim2.new(1, -20, 0, 38)
+SavePlaceBtn.Position = UDim2.new(0, 10, 0, 170)
+
 -- ZombieWalk + Headless + AntiAFK + CuffProtect انتقلوا لقسم "اخرى"
 ZombieWalkBtn.Parent = OthersPage
 ZombieWalkBtn.Size = UDim2.new(1, -20, 0, 38)
@@ -2422,7 +2458,7 @@ do
     PlayerScrollFrame.BorderSizePixel = 0
     PlayerScrollFrame.ScrollBarThickness = isTouchDevice and 3 or 4
     PlayerScrollFrame.ScrollBarImageColor3 = Theme.Active
-    PlayerScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 170)
+    PlayerScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 214)
     PlayerScrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y
     PlayerScrollFrame.ElasticBehavior = Enum.ElasticBehavior.Always
     PlayerScrollFrame.Parent = PlayerPage
@@ -2433,14 +2469,12 @@ do
     end
 end
 
-local menuButtonHeight = isOwnerUser and 30 or 34
-local menuButtonStart = 70
-local menuButtonStep = isOwnerUser and 34 or 38
+local _MenuLayout = {h = isOwnerUser and 30 or 34, start = 70, step = isOwnerUser and 34 or 38}
 
 local function makeMenuButton(text, order)
     local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, -16, 0, menuButtonHeight)
-    button.Position = UDim2.new(0, 8, 0, menuButtonStart + ((order - 1) * menuButtonStep))
+    button.Size = UDim2.new(1, -16, 0, _MenuLayout.h)
+    button.Position = UDim2.new(0, 8, 0, _MenuLayout.start + ((order - 1) * _MenuLayout.step))
     button.BackgroundColor3 = Theme.PanelSoft
     button.BackgroundTransparency = 0.08
     button.Text = text
@@ -3012,12 +3046,12 @@ local function hdSendChat(msg)
 end
 -- ──────────────────────────────────────────────────────────────
 
-local hdCopyActive = false
+-- hdCopyActive merged into _Flags
 
 HdCopyBtn.Text = "تفعيل نسخ"
 
 HdCopyBtn.MouseButton1Click:Connect(function()
-    if not hdCopyActive then
+    if not _Flags.hdCopy then
         local tg = (Input and Input.Text or ""):match("^%s*(.-)%s*$")
         if tg == "" then
             showNotification("اكتب يوزر اللاعب في خانة الكتابة")
@@ -3038,13 +3072,13 @@ HdCopyBtn.MouseButton1Click:Connect(function()
             ..p.."color "  ..tg.." pink "
             ..p.."titlepk "..tg.." فًحبه"
 
-        hdCopyActive = true
+        _Flags.hdCopy = true
         HdCopyBtn.Text = "ايقاف النسخ"
         HdCopyBtn.BackgroundColor3 = Theme.Active
         showNotification("تم تفعيل النسخ على " .. tg)
 
         task.spawn(function()
-            while hdCopyActive do
+            while _Flags.hdCopy do
                 pcall(function()
                     local tcs = game:GetService("TextChatService")
                     local ch = tcs.TextChannels:FindFirstChild("RBXGeneral")
@@ -3064,7 +3098,7 @@ HdCopyBtn.MouseButton1Click:Connect(function()
             end
         end)
     else
-        hdCopyActive = false
+        _Flags.hdCopy = false
         HdCopyBtn.Text = "تفعيل نسخ"
         HdCopyBtn.BackgroundColor3 = Theme.ButtonDefault
         showNotification("تم إيقاف النسخ")
@@ -3721,6 +3755,8 @@ SavePlaceBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+
+
 TeleportBtn.MouseButton1Click:Connect(function()
     local targetName = Input.Text
     local target = nil
@@ -3735,10 +3771,6 @@ TeleportBtn.MouseButton1Click:Connect(function()
     if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
         local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if root then
-            if not SavedLocation then
-                SavedLocation = root.CFrame
-                setButtonState(SavePlaceBtn, true, "رجوع للمكان", "حفظ مكاني", Theme.Accent, Theme.PanelSoft)
-            end
             root.CFrame = target.Character.HumanoidRootPart.CFrame + Vector3.new(2, 0, 0)
         end
     end
@@ -3758,6 +3790,602 @@ local function findTargetPlayer()
 
     return nil
 end
+
+-- ====== دوال التعليق التلقائي ======
+-- _Hang declared at top
+
+local function hangFindCuffTool()
+    local containers = {}
+    local bp = LocalPlayer:FindFirstChild("Backpack")
+    local ch = LocalPlayer.Character
+    if bp then table.insert(containers, bp) end
+    if ch then table.insert(containers, ch) end
+    for _, cont in ipairs(containers) do
+        for _, item in ipairs(cont:GetChildren()) do
+            if item:IsA("Tool") then
+                local n = item.Name
+                if (#n >= 3 and n:sub(1,3) == _Hang.prefix) or n:find(_Hang.prefix) then
+                    return item
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function hangCleanup(returnHome)
+    _Hang.running = false
+    if _Hang.activConn then _Hang.activConn:Disconnect() _Hang.activConn = nil end
+    if _Hang.remConn  then _Hang.remConn:Disconnect()  _Hang.remConn  = nil end
+    pcall(function()
+        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum:UnequipTools() end
+    end)
+    if returnHome and _Hang.savedCF then
+        local cf = _Hang.savedCF
+        task.spawn(function()
+            task.wait(0.1)
+            for _ = 1, 6 do
+                local c = LocalPlayer.Character
+                local r = c and c:FindFirstChild("HumanoidRootPart")
+                if r then r.CFrame = cf end
+                RunService.Heartbeat:Wait()
+            end
+        end)
+    end
+    _Hang.savedCF = nil
+end
+
+local function hangAutoCuff(cuff, bodyPart)
+    local origCamType = workspace.CurrentCamera.CameraType
+    local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    pcall(function()
+        workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
+        local dir = (bodyPart.Position - myRoot.Position).Unit
+        workspace.CurrentCamera.CFrame = CFrame.lookAt(
+            bodyPart.Position - dir * 3 + Vector3.new(0, 0.5, 0),
+            bodyPart.Position
+        )
+    end)
+    task.wait(0.04)
+    local cam = workspace.CurrentCamera
+    local vp  = cam.ViewportSize
+    local sp, vis = cam:WorldToScreenPoint(bodyPart.Position)
+    local tx = (vis and sp.Z > 0) and sp.X or (vp.X / 2)
+    local ty = (vis and sp.Z > 0) and sp.Y or (vp.Y / 2)
+    local mouse = LocalPlayer:GetMouse()
+    local mt, orig, hooked = nil, nil, false
+    pcall(function()
+        mt   = getrawmetatable(mouse)
+        orig = mt.__index
+        setreadonly(mt, false)
+        mt.__index = function(self, key)
+            if key == "Target" then return bodyPart end
+            if key == "Hit"    then return CFrame.new(bodyPart.Position) end
+            if type(orig) == "function" then return orig(self, key) end
+            return orig[key]
+        end
+        setreadonly(mt, true)
+        hooked = true
+    end)
+    pcall(function()
+        if mousemoveabs then mousemoveabs(tx, ty) end
+        if mouse1click then mouse1click()
+        elseif mouse1press then mouse1press() task.wait(0.03) mouse1release() end
+    end)
+    task.wait(0.04)
+    pcall(function()
+        local vim = game:GetService("VirtualInputManager")
+        vim:SendMouseButtonEvent(tx, ty, 0, true,  game, 1)
+        task.wait(0.03)
+        vim:SendMouseButtonEvent(tx, ty, 0, false, game, 1)
+    end)
+    task.wait(0.05)
+    pcall(function() workspace.CurrentCamera.CameraType = origCamType end)
+    if hooked and mt and orig then
+        pcall(function()
+            setreadonly(mt, false)
+            mt.__index = orig
+            setreadonly(mt, true)
+        end)
+    end
+end
+
+local function doHangAuto(targetPlayer)
+    if _Hang.running then return end
+    local cuff = hangFindCuffTool()
+    if not cuff then
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title="تعليق",Text="ما عندك كلبشة!",Duration=4})
+        end)
+        return
+    end
+    local myChar = LocalPlayer.Character
+    local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    local tgChar = targetPlayer.Character
+    local tgRoot = tgChar and tgChar:FindFirstChild("HumanoidRootPart")
+    if not myRoot or not tgRoot then return end
+
+    _Hang.running    = true
+    _Hang.savedCF = myRoot.CFrame
+
+    myRoot.CFrame = tgRoot.CFrame * CFrame.new(0, 0, 2.8)
+    task.wait(0.05)
+
+    local myHum = myChar:FindFirstChildOfClass("Humanoid")
+    if myHum then pcall(function() myHum:EquipTool(cuff) end) end
+    task.wait(0.1)
+
+    local bodyPart = tgChar:FindFirstChild("UpperTorso")
+                  or tgChar:FindFirstChild("Torso")
+                  or tgRoot
+
+    _Hang.activConn = cuff.Activated:Connect(function()
+        if not _Hang.running then return end
+        if _Hang.activConn then _Hang.activConn:Disconnect() _Hang.activConn = nil end
+        task.wait(0.08)
+        local c2 = LocalPlayer.Character
+        local r2 = c2 and c2:FindFirstChild("HumanoidRootPart")
+        if not r2 then hangCleanup(false) return end
+        local homePos = _Hang.savedCF
+        r2.CFrame = CFrame.new(_Hang.flingPos)
+        task.wait(0.25)
+        hdSendChat(_Hang.chatCmd)
+        task.wait(0.4)
+        local c3 = LocalPlayer.Character
+        local r3 = c3 and c3:FindFirstChild("HumanoidRootPart")
+        if r3 and homePos then
+            for _ = 1, 6 do r3.CFrame = homePos RunService.Heartbeat:Wait() end
+        end
+        task.wait(0.6)
+        hdSendChat(_Hang.chatCmd .. " " .. LocalPlayer.Name)
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title="تعليق",Text="تم التعليق!",Duration=4})
+        end)
+        hangCleanup(false)
+    end)
+
+    _Hang.remConn = Players.PlayerRemoving:Connect(function(p)
+        if p == targetPlayer and _Hang.running then
+            hangCleanup(true)
+        end
+    end)
+
+    task.spawn(function()
+        hangAutoCuff(cuff, bodyPart)
+        task.wait(5)
+        if _Hang.running then
+            pcall(function()
+                game:GetService("StarterGui"):SetCore("SendNotification",{Title="تعليق",Text="فشلت الكلبشة، حاول مجدداً",Duration=4})
+            end)
+            hangCleanup(true)
+        end
+    end)
+end
+-- ====== نهاية دوال التعليق ======
+
+_Hang.cuffBtn.MouseButton1Click:Connect(function()
+    local target = findTargetPlayer()
+    if not target then
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title="كلبشة",Text="ما لقيت اللاعب، تأكد من الاسم",Duration=4})
+        end)
+        return
+    end
+    local tgChar = target.Character
+    if not tgChar then return end
+    local tgRoot = tgChar:FindFirstChild("HumanoidRootPart")
+    if not tgRoot then return end
+    local cuff = hangFindCuffTool()
+    if not cuff then
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title="كلبشة",Text="ما عندك كلبشة!",Duration=4})
+        end)
+        return
+    end
+    task.spawn(function()
+        local myChar = LocalPlayer.Character
+        local myHum  = myChar and myChar:FindFirstChildOfClass("Humanoid")
+        if myHum then pcall(function() myHum:EquipTool(cuff) end) end
+        task.wait(0.1)
+        local bodyPart = tgChar:FindFirstChild("UpperTorso") or tgChar:FindFirstChild("Torso") or tgRoot
+        local done = false
+
+        -- طريقة 1: ProximityPrompt على شخصية الهدف
+        if not done then
+            pcall(function()
+                for _, v in ipairs(tgChar:GetDescendants()) do
+                    if v:IsA("ProximityPrompt") then
+                        fireproximityprompt(v)
+                        done = true
+                        break
+                    end
+                end
+            end)
+        end
+
+        -- طريقة 2: ClickDetector على شخصية الهدف
+        if not done then
+            pcall(function()
+                for _, v in ipairs(tgChar:GetDescendants()) do
+                    if v:IsA("ClickDetector") then
+                        fireclickdetector(v)
+                        done = true
+                        break
+                    end
+                end
+            end)
+        end
+
+        -- طريقة 3: RemoteEvent من داخل أداة الكلبشة
+        if not done then
+            pcall(function()
+                for _, v in ipairs(cuff:GetDescendants()) do
+                    if v:IsA("RemoteEvent") then
+                        v:FireServer(bodyPart)
+                        done = true
+                        break
+                    elseif v:IsA("RemoteFunction") then
+                        v:InvokeServer(bodyPart)
+                        done = true
+                        break
+                    end
+                end
+            end)
+        end
+
+        -- طريقة 4 (احتياطية): hook الماوس + ضغط بدون تحريك الشخصية
+        if not done then
+            local cam = workspace.CurrentCamera
+            local vp  = cam.ViewportSize
+            local sp, vis = cam:WorldToScreenPoint(bodyPart.Position)
+            local tx = (vis and sp.Z > 0) and sp.X or (vp.X / 2)
+            local ty = (vis and sp.Z > 0) and sp.Y or (vp.Y / 2)
+            local mouse = LocalPlayer:GetMouse()
+            local mt, orig, hooked = nil, nil, false
+            pcall(function()
+                mt   = getrawmetatable(mouse)
+                orig = mt.__index
+                setreadonly(mt, false)
+                mt.__index = function(self, key)
+                    if key == "Target" then return bodyPart end
+                    if key == "Hit"    then return CFrame.new(bodyPart.Position) end
+                    if type(orig) == "function" then return orig(self, key) end
+                    return orig[key]
+                end
+                setreadonly(mt, true)
+                hooked = true
+            end)
+            pcall(function()
+                if mousemoveabs then mousemoveabs(tx, ty) end
+                if mouse1click then mouse1click()
+                elseif mouse1press then mouse1press() task.wait(0.03) mouse1release() end
+            end)
+            task.wait(0.04)
+            pcall(function()
+                local vim = game:GetService("VirtualInputManager")
+                vim:SendMouseButtonEvent(tx, ty, 0, true,  game, 1)
+                task.wait(0.03)
+                vim:SendMouseButtonEvent(tx, ty, 0, false, game, 1)
+            end)
+            if hooked and mt and orig then
+                pcall(function()
+                    setreadonly(mt, false)
+                    mt.__index = orig
+                    setreadonly(mt, true)
+                end)
+            end
+        end
+    end)
+end)
+
+_Hang.pullBtn.MouseButton1Click:Connect(function()
+    local target = findTargetPlayer()
+    if not target then
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title="سحب",Text="ما لقيت اللاعب، تأكد من الاسم",Duration=4})
+        end)
+        return
+    end
+    local tgChar = target.Character
+    if not tgChar then return end
+    local tgRoot = tgChar:FindFirstChild("HumanoidRootPart")
+    if not tgRoot then return end
+    local cuff = hangFindCuffTool()
+    if not cuff then
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title="سحب",Text="ما عندك كلبشة!",Duration=4})
+        end)
+        return
+    end
+    task.spawn(function()
+        local myChar = LocalPlayer.Character
+        local myHum  = myChar and myChar:FindFirstChildOfClass("Humanoid")
+        if myHum then pcall(function() myHum:EquipTool(cuff) end) end
+        task.wait(0.1)
+        local bodyPart = tgChar:FindFirstChild("UpperTorso") or tgChar:FindFirstChild("Torso") or tgRoot
+        local done = false
+
+        -- طريقة 1: ProximityPrompt
+        if not done then
+            pcall(function()
+                for _, v in ipairs(tgChar:GetDescendants()) do
+                    if v:IsA("ProximityPrompt") then
+                        fireproximityprompt(v)
+                        done = true
+                        break
+                    end
+                end
+            end)
+        end
+
+        -- طريقة 2: ClickDetector
+        if not done then
+            pcall(function()
+                for _, v in ipairs(tgChar:GetDescendants()) do
+                    if v:IsA("ClickDetector") then
+                        fireclickdetector(v)
+                        done = true
+                        break
+                    end
+                end
+            end)
+        end
+
+        -- طريقة 3: RemoteEvent من الكلبشة
+        if not done then
+            pcall(function()
+                for _, v in ipairs(cuff:GetDescendants()) do
+                    if v:IsA("RemoteEvent") then
+                        v:FireServer(bodyPart)
+                        done = true
+                        break
+                    elseif v:IsA("RemoteFunction") then
+                        v:InvokeServer(bodyPart)
+                        done = true
+                        break
+                    end
+                end
+            end)
+        end
+
+        -- طريقة 4 (احتياطية): hook الماوس
+        if not done then
+            local cam = workspace.CurrentCamera
+            local vp  = cam.ViewportSize
+            local sp, vis = cam:WorldToScreenPoint(bodyPart.Position)
+            local tx = (vis and sp.Z > 0) and sp.X or (vp.X / 2)
+            local ty = (vis and sp.Z > 0) and sp.Y or (vp.Y / 2)
+            local mouse = LocalPlayer:GetMouse()
+            local mt, orig, hooked = nil, nil, false
+            pcall(function()
+                mt   = getrawmetatable(mouse)
+                orig = mt.__index
+                setreadonly(mt, false)
+                mt.__index = function(self, key)
+                    if key == "Target" then return bodyPart end
+                    if key == "Hit"    then return CFrame.new(bodyPart.Position) end
+                    if type(orig) == "function" then return orig(self, key) end
+                    return orig[key]
+                end
+                setreadonly(mt, true)
+                hooked = true
+            end)
+            pcall(function()
+                if mousemoveabs then mousemoveabs(tx, ty) end
+                if mouse1click then mouse1click()
+                elseif mouse1press then mouse1press() task.wait(0.03) mouse1release() end
+            end)
+            task.wait(0.04)
+            pcall(function()
+                local vim = game:GetService("VirtualInputManager")
+                vim:SendMouseButtonEvent(tx, ty, 0, true,  game, 1)
+                task.wait(0.03)
+                vim:SendMouseButtonEvent(tx, ty, 0, false, game, 1)
+            end)
+            if hooked and mt and orig then
+                pcall(function()
+                    setreadonly(mt, false)
+                    mt.__index = orig
+                    setreadonly(mt, true)
+                end)
+            end
+        end
+
+        -- بعد الكلبشة: ضغطتين على الهدف بفاصل 0.3 ثانية
+        local function doPullClick()
+            local cam2 = workspace.CurrentCamera
+            local vp2  = cam2.ViewportSize
+            local sp2, vis2 = cam2:WorldToScreenPoint(bodyPart.Position)
+            local tx2 = (vis2 and sp2.Z > 0) and sp2.X or (vp2.X / 2)
+            local ty2 = (vis2 and sp2.Z > 0) and sp2.Y or (vp2.Y / 2)
+            -- حرّك المؤشر فوق الهدف أولاً
+            if mousemoveabs then mousemoveabs(tx2, ty2) end
+            if mouse1click then
+                mouse1click()
+            elseif mouse1press then
+                mouse1press()
+                task.wait(0.03)
+                mouse1release()
+            else
+                local vim2 = game:GetService("VirtualInputManager")
+                vim2:SendMouseButtonEvent(tx2, ty2, 0, true,  game, 1)
+                task.wait(0.03)
+                vim2:SendMouseButtonEvent(tx2, ty2, 0, false, game, 1)
+            end
+        end
+        task.wait(0.15)
+        for _i = 1, 5 do
+            -- ضغطة على جسم الهدف (كلبشة)
+            pcall(doPullClick)
+            -- ضغطة على جسم الهدف (سحب)
+            pcall(doPullClick)
+            -- ضغطة وسط الشاشة (فك)
+            pcall(function()
+                local vp3 = workspace.CurrentCamera.ViewportSize
+                local cx  = vp3.X / 2
+                local cy  = vp3.Y / 2
+                if mousemoveabs then mousemoveabs(cx, cy) end
+                if mouse1click then
+                    mouse1click()
+                elseif mouse1press then
+                    mouse1press()
+                    task.wait(0.03)
+                    mouse1release()
+                else
+                    local vim3 = game:GetService("VirtualInputManager")
+                    vim3:SendMouseButtonEvent(cx, cy, 0, true,  game, 1)
+                    task.wait(0.03)
+                    vim3:SendMouseButtonEvent(cx, cy, 0, false, game, 1)
+                end
+            end)
+        end
+    end)
+end)
+
+_Hang.freezeBtn.MouseButton1Click:Connect(function()
+    local target = findTargetPlayer()
+    if not target then
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title="تجميد",Text="ما لقيت اللاعب، تأكد من الاسم",Duration=4})
+        end)
+        return
+    end
+    local tgChar = target.Character
+    if not tgChar then return end
+    local tgRoot = tgChar:FindFirstChild("HumanoidRootPart")
+    if not tgRoot then return end
+    local cuff = hangFindCuffTool()
+    if not cuff then
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title="تجميد",Text="ما عندك كلبشة!",Duration=4})
+        end)
+        return
+    end
+    task.spawn(function()
+        local myChar = LocalPlayer.Character
+        local myHum  = myChar and myChar:FindFirstChildOfClass("Humanoid")
+        if myHum then pcall(function() myHum:EquipTool(cuff) end) end
+        task.wait(0.1)
+        local bodyPart = tgChar:FindFirstChild("UpperTorso") or tgChar:FindFirstChild("Torso") or tgRoot
+        local done = false
+
+        -- طريقة 1: ProximityPrompt
+        if not done then
+            pcall(function()
+                for _, v in ipairs(tgChar:GetDescendants()) do
+                    if v:IsA("ProximityPrompt") then
+                        fireproximityprompt(v)
+                        done = true
+                        break
+                    end
+                end
+            end)
+        end
+
+        -- طريقة 2: ClickDetector
+        if not done then
+            pcall(function()
+                for _, v in ipairs(tgChar:GetDescendants()) do
+                    if v:IsA("ClickDetector") then
+                        fireclickdetector(v)
+                        done = true
+                        break
+                    end
+                end
+            end)
+        end
+
+        -- طريقة 3: RemoteEvent من الكلبشة
+        if not done then
+            pcall(function()
+                for _, v in ipairs(cuff:GetDescendants()) do
+                    if v:IsA("RemoteEvent") then
+                        v:FireServer(bodyPart)
+                        done = true
+                        break
+                    elseif v:IsA("RemoteFunction") then
+                        v:InvokeServer(bodyPart)
+                        done = true
+                        break
+                    end
+                end
+            end)
+        end
+
+        -- طريقة 4 (احتياطية): hook الماوس + ضغط
+        if not done then
+            local cam = workspace.CurrentCamera
+            local vp  = cam.ViewportSize
+            local sp, vis = cam:WorldToScreenPoint(bodyPart.Position)
+            local tx = (vis and sp.Z > 0) and sp.X or (vp.X / 2)
+            local ty = (vis and sp.Z > 0) and sp.Y or (vp.Y / 2)
+            local mouse = LocalPlayer:GetMouse()
+            local mt, orig, hooked = nil, nil, false
+            pcall(function()
+                mt   = getrawmetatable(mouse)
+                orig = mt.__index
+                setreadonly(mt, false)
+                mt.__index = function(self, key)
+                    if key == "Target" then return bodyPart end
+                    if key == "Hit"    then return CFrame.new(bodyPart.Position) end
+                    if type(orig) == "function" then return orig(self, key) end
+                    return orig[key]
+                end
+                setreadonly(mt, true)
+                hooked = true
+            end)
+            pcall(function()
+                if mousemoveabs then mousemoveabs(tx, ty) end
+                if mouse1click then mouse1click()
+                elseif mouse1press then mouse1press() task.wait(0.03) mouse1release() end
+            end)
+            task.wait(0.04)
+            pcall(function()
+                local vim = game:GetService("VirtualInputManager")
+                vim:SendMouseButtonEvent(tx, ty, 0, true,  game, 1)
+                task.wait(0.03)
+                vim:SendMouseButtonEvent(tx, ty, 0, false, game, 1)
+            end)
+            if hooked and mt and orig then
+                pcall(function()
+                    setreadonly(mt, false)
+                    mt.__index = orig
+                    setreadonly(mt, true)
+                end)
+            end
+        end
+
+        -- أرسل أوامر التجميد عبر الشات
+        task.wait(0.15)
+        hdSendChat(_Hang.chatCmd)
+        task.wait(0.5)
+        hdSendChat(_Hang.chatCmd .. " " .. LocalPlayer.Name)
+        task.wait(0.2)
+        -- شيل الكلبشة من يدك في الأخير
+        pcall(function()
+            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum:UnequipTools() end
+        end)
+    end)
+end)
+
+HangAutoBtn.MouseButton1Click:Connect(function()
+    if _Hang.running then return end
+    local target = findTargetPlayer()
+    if not target then
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title="تعليق",Text="ما لقيت اللاعب، تأكد من الاسم",Duration=4})
+        end)
+        return
+    end
+    setButtonState(HangAutoBtn, true, "جاري التعليق...", "تعليق", Theme.Danger, Theme.PanelSoft)
+    doHangAuto(target)
+    task.spawn(function()
+        while _Hang.running do task.wait(0.3) end
+        setButtonState(HangAutoBtn, false, "جاري التعليق...", "تعليق", Theme.Danger, Theme.PanelSoft)
+    end)
+end)
 
 TargetFlingBtn.MouseButton1Click:Connect(function()
     if targetFlingActive then
