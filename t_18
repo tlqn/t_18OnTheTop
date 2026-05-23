@@ -10,8 +10,35 @@ _G._ZWA = false
 _G._ZOrig = nil
 _G._HLA = false
 local isTouchDevice = UserInputService.TouchEnabled
-local baseFrameSize = Vector2.new(610, 498)
+local baseFrameSize = Vector2.new(610, 500)
 local OwnerUsername = "azoz11211"
+-- ── وقت بدء السيرفر الحقيقي ──
+-- يلتقط DistributedGameTime فور تشغيل السكربت
+-- ثم يراقبها 5 ثوانٍ للتحقق من التزامن مع السيرفر الحقيقي
+_T18Tick0 = tick()
+_T18DGT0  = math.max(0, workspace.DistributedGameTime or 0)
+task.spawn(function()
+    for _t18si = 1, 10 do
+        task.wait(0.5)
+        local _t18dgt = workspace.DistributedGameTime or 0
+        local _t18el  = tick() - _T18Tick0
+        -- لو DGT قفزت فجأة لقيمة أكبر بكثير من الوقت المنقضي
+        -- يعني تزامنت مع وقت السيرفر الحقيقي
+        if _t18dgt > _T18DGT0 + _t18el + 2 then
+            _T18DGT0  = _t18dgt
+            _T18Tick0 = tick()
+            break
+        end
+        -- نحتفظ بأكبر قيمة شُوهدت
+        if _t18dgt > _T18DGT0 + _t18el then
+            _T18DGT0  = _t18dgt - _t18el
+            _T18Tick0 = tick()
+        end
+    end
+end)
+function _T18ServerUptime()
+    return math.floor(_T18DGT0 + (tick() - _T18Tick0))
+end
 local isOwnerUser = LocalPlayer.Name:lower() == OwnerUsername:lower()
 ChatNameColorData = nil
 T18RuntimeToken = tostring(math.floor(tick() * 1000)) .. tostring(math.random(1000, 9999))
@@ -204,6 +231,7 @@ local targetFlingStartTime = 0
 local SpeedActive = false
 local resetCooldown = false
 
+
 local SpectateActive = false
 local SpectateConnection = nil
 local SpectateTarget = nil
@@ -214,6 +242,15 @@ local SpectateWarningLabel = nil
 local SpectatePlayerRemovingConnection = nil
 local SavedLocation = nil
 local _Hang = {running=false, savedCF=nil, activConn=nil, remConn=nil, prefix="كلب", flingPos=Vector3.new(999999999,999999999,999999999), chatCmd="/e ,char me"}
+_T18Lang = "ar"
+_T18TR = nil
+_T18Rev = nil
+function T18T(s)
+    if _T18Lang == "en" and _T18TR and _T18TR[s] then return _T18TR[s] end
+    if _T18Lang == "ar" and _T18Rev and _T18Rev[s] then return _T18Rev[s] end
+    return s
+end
+
 
 local characterConnections = {}
 local viewportConnection = nil
@@ -547,6 +584,7 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "BangGuiPro"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.DisplayOrder = 9999
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
@@ -577,15 +615,13 @@ end
 local Frame = Instance.new("Frame")
 Frame.Name = "Main"
 Frame.AnchorPoint = Vector2.new(0.5, 0.5)
-Frame.Size = UDim2.new(0, 610, 0, 498)
+Frame.Size = UDim2.new(0, 610, 0, 500)
 Frame.Position = UDim2.new(0.5, 0, 0.5, 0)
 Frame.BackgroundColor3 = Theme.Panel
 Frame.BorderSizePixel = 0
 Frame.Parent = ScreenGui
 makeCorner(Frame, 22)
-makeStroke(Frame, Theme.Accent, 2, 0.35)
 makeShadow(Frame)
-UiFx.makeAccentGlow(Frame, Theme.Accent, 0.94, 72, 0)
 
 FrameScale = Instance.new("UIScale")
 FrameScale.Parent = Frame
@@ -725,8 +761,8 @@ do
     Subtitle.Parent = Header
 
     local TopBadge = Instance.new("Frame")
-    TopBadge.Size = UDim2.new(0, 150, 0, 34)
-    TopBadge.Position = UDim2.new(1, -166, 0, 20)
+    TopBadge.Size = UDim2.new(0, 195, 0, 34)
+    TopBadge.Position = UDim2.new(1, -211, 0, 20)
     TopBadge.BackgroundColor3 = Theme.PanelSoft
     TopBadge.BackgroundTransparency = 0.16
     TopBadge.BorderSizePixel = 0
@@ -752,7 +788,7 @@ do
     TopBadgeText.TextColor3 = Theme.Text
     TopBadgeText.TextXAlignment = Enum.TextXAlignment.Left
     TopBadgeText.Font = Enum.Font.GothamMedium
-    TopBadgeText.TextSize = 16
+    TopBadgeText.TextSize = 13
     TopBadgeText.Parent = TopBadge
 
     local ProfileCard = Instance.new("Frame")
@@ -808,7 +844,7 @@ do
 end
 
 local ContentPanel = Instance.new("Frame")
-ContentPanel.Size = UDim2.new(1, -32, 0, 298)
+ContentPanel.Size = UDim2.new(1, -32, 0, 310)
 ContentPanel.Position = UDim2.new(0, 16, 0, 168)
 ContentPanel.BackgroundColor3 = Theme.Bg
 ContentPanel.BackgroundTransparency = 0.24
@@ -955,21 +991,39 @@ PanelPadding:Destroy()
 SectionLabel:Destroy()
 ContentPanel.ClipsDescendants = true
 
-local Sidebar = Instance.new("Frame")
-Sidebar.Name = "Sidebar"
-Sidebar.Size = UDim2.new(0, 132, 1, -20)
-Sidebar.Position = UDim2.new(0, 10, 0, 10)
-Sidebar.BackgroundColor3 = Theme.Header
-Sidebar.BackgroundTransparency = 0.22
-Sidebar.BorderSizePixel = 0
-Sidebar.Parent = ContentPanel
-makeCorner(Sidebar, 14)
-makeStroke(Sidebar, Theme.Border, 1, 0.2)
-UiFx.makeGradient(Sidebar, {
+local SidebarHost = Instance.new("Frame")
+SidebarHost.Name = "Sidebar"
+SidebarHost.Size = UDim2.new(0, 132, 1, -10)
+SidebarHost.Position = UDim2.new(0, 10, 0, 10)
+SidebarHost.BackgroundColor3 = Theme.Header
+SidebarHost.BackgroundTransparency = 0.22
+SidebarHost.BorderSizePixel = 0
+SidebarHost.ClipsDescendants = true
+SidebarHost.Parent = ContentPanel
+makeCorner(SidebarHost, 14)
+makeStroke(SidebarHost, Theme.Border, 1, 0.2)
+UiFx.makeGradient(SidebarHost, {
     ColorSequenceKeypoint.new(0, Color3.fromRGB(16, 20, 42)),
     ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 14, 30)),
 }, 90)
-UiFx.makeStarField(Sidebar, 10)
+UiFx.makeStarField(SidebarHost, 10)
+
+-- تمرير للمالك فقط
+local Sidebar
+if isOwnerUser then
+    local _sideScroll = Instance.new("ScrollingFrame")
+    _sideScroll.Size = UDim2.new(1, 0, 1, 0)
+    _sideScroll.CanvasSize = UDim2.new(0, 0, 0, 380)
+    _sideScroll.ScrollBarThickness = 3
+    _sideScroll.ScrollBarImageColor3 = Theme.Border
+    _sideScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+    _sideScroll.BackgroundTransparency = 1
+    _sideScroll.BorderSizePixel = 0
+    _sideScroll.Parent = SidebarHost
+    Sidebar = _sideScroll
+else
+    Sidebar = SidebarHost
+end
 
 local SidebarTitle = Instance.new("TextLabel")
 SidebarTitle.Size = UDim2.new(1, -16, 0, 22)
@@ -1274,11 +1328,86 @@ function DestroyHeadChatBubbleStack(speakerKey)
     state.guis = {}
 end
 
+-- =====================================================================
+-- يستبدل RenderHeadChatBubbleStack + ShowChatBubbleAboveHead
+-- صفر locals جديدة على المستوى الأعلى (الأصل عنده 199 من الـ 200)
+-- =====================================================================
+
+-- globals بدل locals عشان ما نتجاوز حد الـ 200 register
+_T18BC = {
+    showDist = 35,
+    hideDist = 45,
+    font     = Enum.Font.GothamSemibold,
+    fontSize = 19,
+    maxW     = 190,
+    minW     = 85,
+    hPad     = 24,
+    vPad     = 18,
+}
+
+function T18CalcBubbleDims(text)
+    local ts     = game:GetService("TextService")
+    local innerW = _T18BC.maxW - _T18BC.hPad
+    local bounds = ts:GetTextSize(text, _T18BC.fontSize, _T18BC.font, Vector2.new(innerW, math.huge))
+    return math.clamp(bounds.X + _T18BC.hPad, _T18BC.minW, _T18BC.maxW),
+           math.clamp(bounds.Y + _T18BC.vPad, 36, 110)
+end
+
+function T18GetDistToHead(speakerHead)
+    if not speakerHead or not speakerHead.Parent then return math.huge end
+    local myChar  = LocalPlayer.Character
+    local myRoot  = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    local cam     = workspace.CurrentCamera
+    local camPos  = cam and cam.CFrame.Position
+    local cd = myRoot  and (myRoot.Position - speakerHead.Position).Magnitude or math.huge
+    local kd = camPos  and (camPos          - speakerHead.Position).Magnitude or math.huge
+    return math.min(cd, kd)
+end
+
+function T18GetPPS(head, cam)
+    if not head or not head.Parent or not cam then return 48 end
+    local dist = (cam.CFrame.Position - head.Position).Magnitude
+    if dist < 1 then dist = 1 end
+    return math.clamp(
+        cam.ViewportSize.Y / (2 * dist * math.tan(math.rad(cam.FieldOfView / 2))),
+        6, 400
+    )
+end
+
+-- حلقة RenderStepped تعيد حساب offsets كل فريم بناءً على الكاميرا
+-- global flag عشان تشتغل مرة واحدة بس
+HeadChatBubble_RestackStarted = HeadChatBubble_RestackStarted or false
+if not HeadChatBubble_RestackStarted then
+    HeadChatBubble_RestackStarted = true
+    task.spawn(function()
+        while T18RuntimeAlive() do
+            game:GetService("RunService").RenderStepped:Wait()
+            local cam = workspace.CurrentCamera
+            if not cam or not HeadChatBubbleState then continue end
+            for _, state in pairs(HeadChatBubbleState) do
+                if not state.guis or #state.guis == 0 then continue end
+                if not state._dims then continue end
+                local head = state.head
+                if not head or not head.Parent then continue end
+                local pps = T18GetPPS(head, cam)
+                local cur = 3.1
+                for i = #state.guis, 1, -1 do
+                    if state.guis[i] and state.guis[i].Parent then
+                        state.guis[i].StudsOffset = Vector3.new(0, cur, 0)
+                    end
+                    if i > 1 and state._dims[i] and state._dims[i - 1] then
+                        -- الـ gap = 10 pixels ثابتة على الشاشة بغض النظر عن بعد الكاميرا
+                        cur = cur + (state._dims[i] + state._dims[i - 1] + 20) / (2 * pps)
+                    end
+                end
+            end
+        end
+    end)
+end
+
 function RenderHeadChatBubbleStack(speakerKey)
     local state = HeadChatBubbleState[speakerKey]
-    if not state or not state.head then
-        return
-    end
+    if not state or not state.head then return end
 
     DestroyHeadChatBubbleStack(speakerKey)
 
@@ -1287,131 +1416,273 @@ function RenderHeadChatBubbleStack(speakerKey)
         return
     end
 
-    state.guis = {}
+    state.guis  = {}
+    state._dims = {}
+
+    local TweenService = game:GetService("TweenService")
+    local isDistHidden = state.distanceHidden == true
+
+    local dims = {}
+    for index, messageData in ipairs(state.messages) do
+        local fw, fh = T18CalcBubbleDims(messageData.text)
+        dims[index]  = { frameW = fw, frameH = fh }
+    end
+
+    -- offsets أولية (الـ restack loop تصحح في الفريم التالي)
+    local cam0  = workspace.CurrentCamera
+    local pps0  = T18GetPPS(state.head, cam0)
+    local offsets = {}
+    local cur0  = 3.1
+    for i = #state.messages, 1, -1 do
+        offsets[i] = cur0
+        if i > 1 then
+            cur0 = cur0 + (dims[i].frameH + dims[i - 1].frameH + 20) / (2 * pps0)
+        end
+    end
 
     for index, messageData in ipairs(state.messages) do
-        local bubbleHeight = 48
-        if #messageData.text > 26 then
-            bubbleHeight = 60
-        end
-        if #messageData.text > 52 then
-            bubbleHeight = 76
-        end
+        local isNewest = (index == #state.messages)
+        local d        = dims[index]
+        local guiH     = d.frameH + 5 + (isNewest and 12 or 0)
+        local guiW     = d.frameW + 8
 
         local bubbleGui = Instance.new("BillboardGui")
-        bubbleGui.Name = "T18HeadChatBubble"
-        bubbleGui.Adornee = state.head
+        bubbleGui.Name        = "T18HeadChatBubble"
+        bubbleGui.Adornee     = state.head
         bubbleGui.AlwaysOnTop = true
-        bubbleGui.Size = UDim2.new(0, 170, 0, bubbleHeight)
-        bubbleGui.StudsOffset = Vector3.new(0, 3.25 + ((#state.messages - index) * 1.4), 0)
-        bubbleGui.Parent = ScreenGui
+        bubbleGui.Size        = UDim2.new(0, guiW, 0, guiH)
+        bubbleGui.StudsOffset = Vector3.new(0, offsets[index], 0)
+        bubbleGui.Parent      = ScreenGui
+
+        if isNewest then
+            local tail = Instance.new("Frame")
+            tail.Name                   = "BubbleTail"
+            tail.AnchorPoint            = Vector2.new(0.5, 0)
+            tail.Size                   = UDim2.new(0, 13, 0, 13)
+            tail.Position               = UDim2.new(0.5, 0, 0, d.frameH - 3)
+            tail.BackgroundColor3       = Color3.fromRGB(248, 250, 255)
+            tail.BackgroundTransparency = 1
+            tail.BorderSizePixel        = 0
+            tail.Rotation               = 45
+            tail.ZIndex                 = 1
+            tail.Parent                 = bubbleGui
+            makeCorner(tail, 3)
+            if not isDistHidden then
+                TweenService:Create(tail,
+                    TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                    { BackgroundTransparency = 0.02 }):Play()
+            end
+        end
 
         local bubbleFrame = Instance.new("Frame")
-        bubbleFrame.Size = UDim2.new(1, 0, 1, -5)
-        bubbleFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        bubbleFrame.BackgroundTransparency = 0.02
-        bubbleFrame.BorderSizePixel = 0
-        bubbleFrame.Parent = bubbleGui
-        makeCorner(bubbleFrame, 14)
-        makeStroke(bubbleFrame, Color3.fromRGB(218, 218, 218), 1, 0.18)
+        bubbleFrame.Name                   = "BubbleFrame"
+        bubbleFrame.AnchorPoint            = Vector2.new(0.5, 0)
+        bubbleFrame.Size                   = UDim2.new(0, d.frameW, 0, d.frameH)
+        bubbleFrame.Position               = UDim2.new(0.5, 0, 0, 0)
+        bubbleFrame.BackgroundColor3       = Color3.fromRGB(255, 255, 255)
+        bubbleFrame.BackgroundTransparency = 1
+        bubbleFrame.BorderSizePixel        = 0
+        bubbleFrame.ZIndex                 = 2
+        bubbleFrame.Parent                 = bubbleGui
+        makeCorner(bubbleFrame, 16)
+        makeStroke(bubbleFrame, Color3.fromRGB(208, 216, 238), 1.2, 0.08)
 
-        local tail = Instance.new("Frame")
-        tail.AnchorPoint = Vector2.new(0.5, 0.5)
-        tail.Size = UDim2.new(0, 12, 0, 12)
-        tail.Position = UDim2.new(0.5, 0, 1, -1)
-        tail.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        tail.BackgroundTransparency = 0.02
-        tail.BorderSizePixel = 0
-        tail.Rotation = 45
-        tail.ZIndex = bubbleFrame.ZIndex
-        tail.Parent = bubbleFrame
+        local gradient = Instance.new("UIGradient")
+        gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(238, 243, 255)),
+        })
+        gradient.Rotation = 90
+        gradient.Parent   = bubbleFrame
 
+        local uiScale = Instance.new("UIScale")
+        uiScale.Scale  = (isNewest and not isDistHidden) and 0.75 or 1.0
+        uiScale.Parent = bubbleFrame
+
+        local textHPad   = _T18BC.hPad - 4
         local bubbleText = Instance.new("TextLabel")
-        bubbleText.Size = UDim2.new(1, -16, 1, -12)
-        bubbleText.Position = UDim2.new(0, 8, 0, 2)
+        bubbleText.Name               = "BubbleText"
+        bubbleText.Size               = UDim2.new(1, -textHPad, 1, -8)
+        bubbleText.Position           = UDim2.new(0, textHPad / 2, 0, 4)
         bubbleText.BackgroundTransparency = 1
-        bubbleText.Text = messageData.text
-        bubbleText.TextColor3 = Color3.fromRGB(95, 95, 95)
-        bubbleText.TextWrapped = true
-        bubbleText.TextXAlignment = Enum.TextXAlignment.Center
-        bubbleText.TextYAlignment = Enum.TextYAlignment.Center
-        bubbleText.Font = Enum.Font.GothamMedium
-        bubbleText.TextSize = 18
-        bubbleText.ZIndex = bubbleFrame.ZIndex + 1
-        bubbleText.Parent = bubbleFrame
+        bubbleText.Text               = messageData.text
+        bubbleText.TextColor3         = Color3.fromRGB(55, 65, 88)
+        bubbleText.TextTransparency   = 1
+        bubbleText.TextWrapped        = true
+        bubbleText.TextXAlignment     = Enum.TextXAlignment.Center
+        bubbleText.TextYAlignment     = Enum.TextYAlignment.Center
+        bubbleText.Font               = _T18BC.font
+        bubbleText.TextSize           = _T18BC.fontSize
+        bubbleText.ZIndex             = 3
+        bubbleText.Parent             = bubbleFrame
 
-        table.insert(state.guis, bubbleGui)
+        if not isDistHidden then
+            if isNewest then
+                TweenService:Create(uiScale,
+                    TweenInfo.new(0.26, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+                    { Scale = 1.0 }):Play()
+                TweenService:Create(bubbleFrame,
+                    TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                    { BackgroundTransparency = 0.02 }):Play()
+                TweenService:Create(bubbleText,
+                    TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                    { TextTransparency = 0 }):Play()
+            else
+                bubbleFrame.BackgroundTransparency = 0.02
+                bubbleText.TextTransparency        = 0
+            end
+        end
+
+        table.insert(state.guis,  bubbleGui)
+        table.insert(state._dims, d.frameH)
     end
 end
 
 function ShowChatBubbleAboveHead(fromUserId, fromName, messageText)
     pcall(function()
-        if not T18RuntimeAlive() then
-            return
-        end
+        if not T18RuntimeAlive() then return end
+
         local cleanText = tostring(messageText or "")
         cleanText = cleanText:gsub("[\r\n]", " ")
         cleanText = cleanText:gsub("%s+", " ")
         cleanText = cleanText:gsub("^%s+", "")
         cleanText = cleanText:gsub("%s+$", "")
         cleanText = cleanText:gsub("^%[%[T18CLR:%d+,%d+,%d+%]%]", "")
-        if #cleanText == 0 then
-            return
-        end
-        if #cleanText > 120 then
-            cleanText = cleanText:sub(1, 120)
-        end
+        if #cleanText == 0 then return end
+        if #cleanText > 120 then cleanText = cleanText:sub(1, 120) end
 
-        local speaker = nil
+        local speaker       = nil
         local numericUserId = tonumber(fromUserId)
         for _, player in ipairs(Players:GetPlayers()) do
-            if (numericUserId and numericUserId > 0 and player.UserId == numericUserId) or player.Name == fromName then
-                speaker = player
-                break
+            if (numericUserId and numericUserId > 0 and player.UserId == numericUserId)
+                or player.Name == fromName then
+                speaker = player; break
             end
         end
 
         local character = speaker and speaker.Character
-        local head = character and character:FindFirstChild("Head")
-        if not head then
-            return
-        end
+        local head      = character and character:FindFirstChild("Head")
+        if not head then return end
 
         local speakerKey = GetHeadChatBubbleSpeakerKey(numericUserId or 0, fromName)
         if not HeadChatBubbleState[speakerKey] then
-            HeadChatBubbleState[speakerKey] = {
-                head = head,
-                messages = {},
-                guis = {},
-            }
+            HeadChatBubbleState[speakerKey] = { head = head, messages = {}, guis = {} }
         end
 
-        HeadChatBubbleState[speakerKey].head = head
+        local state           = HeadChatBubbleState[speakerKey]
+        state.head            = head
         HeadChatBubbleMessageId = HeadChatBubbleMessageId + 1
         local queuedMessageId = HeadChatBubbleMessageId
-        table.insert(HeadChatBubbleState[speakerKey].messages, { text = cleanText, id = queuedMessageId })
+        table.insert(state.messages, { text = cleanText, id = queuedMessageId })
 
-        if #HeadChatBubbleState[speakerKey].messages > 3 then
-            table.remove(HeadChatBubbleState[speakerKey].messages, 1)
+        if #state.messages > 3 then
+            table.remove(state.messages, 1)
         end
 
+        state.distanceHidden = (T18GetDistToHead(head) > _T18BC.showDist)
         RenderHeadChatBubbleStack(speakerKey)
 
+        -- ===== حلقة مراقبة المسافة =====
+        if not state.distanceLoop then
+            state.distanceLoop = task.spawn(function()
+                local ts = game:GetService("TweenService")
+
+                local function applyFadeIn(s)
+                    for _, gui in ipairs(s.guis or {}) do
+                        if not gui or not gui.Parent then continue end
+                        local frame = gui:FindFirstChild("BubbleFrame")
+                        local tail  = gui:FindFirstChild("BubbleTail")
+                        local scale = frame and frame:FindFirstChildOfClass("UIScale")
+                        local txt   = frame and frame:FindFirstChild("BubbleText")
+                        if scale then scale.Scale = 0.75 end
+                        if scale then ts:Create(scale, TweenInfo.new(0.26, Enum.EasingStyle.Back,  Enum.EasingDirection.Out), { Scale = 1.0 }):Play() end
+                        if frame  then ts:Create(frame, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 0.02 }):Play() end
+                        if tail   then ts:Create(tail,  TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 0.02 }):Play() end
+                        if txt    then ts:Create(txt,   TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { TextTransparency = 0 }):Play() end
+                    end
+                end
+
+                local function applyFadeOut(s)
+                    for _, gui in ipairs(s.guis or {}) do
+                        if not gui or not gui.Parent then continue end
+                        local frame = gui:FindFirstChild("BubbleFrame")
+                        local tail  = gui:FindFirstChild("BubbleTail")
+                        local txt   = frame and frame:FindFirstChild("BubbleText")
+                        if frame then ts:Create(frame, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 1 }):Play() end
+                        if tail  then ts:Create(tail,  TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 1 }):Play() end
+                        if txt   then ts:Create(txt,   TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { TextTransparency = 1 }):Play() end
+                    end
+                end
+
+                while T18RuntimeAlive() do
+                    local s = HeadChatBubbleState[speakerKey]
+                    if not s or not s.messages or #s.messages == 0 then break end
+                    local dist      = T18GetDistToHead(s.head)
+                    local wasHidden = s.distanceHidden == true
+                    if wasHidden and dist <= _T18BC.showDist then
+                        s.distanceHidden = false
+                        applyFadeIn(s)
+                    elseif not wasHidden and dist > _T18BC.hideDist then
+                        s.distanceHidden = true
+                        applyFadeOut(s)
+                    end
+                    task.wait(0.15)
+                end
+
+                if HeadChatBubbleState[speakerKey] then
+                    HeadChatBubbleState[speakerKey].distanceLoop = nil
+                end
+            end)
+        end
+
+        -- ===== مؤقت اختفاء الرسالة (10 ثواني) =====
         task.spawn(function()
             local targetId = queuedMessageId
-            task.wait(4)
-            if not HeadChatBubbleState[speakerKey] or not HeadChatBubbleState[speakerKey].messages then
-                return
-            end
+            task.wait(9.5)
+            if not T18RuntimeAlive() then return end
+            local s = HeadChatBubbleState[speakerKey]
+            if not s or not s.messages then return end
 
-            for messageIndex, messageData in ipairs(HeadChatBubbleState[speakerKey].messages) do
-                if messageData.id == targetId then
-                    table.remove(HeadChatBubbleState[speakerKey].messages, messageIndex)
-                    break
+            local msgIndex = nil
+            for i, md in ipairs(s.messages) do
+                if md.id == targetId then msgIndex = i; break end
+            end
+            if not msgIndex then return end
+
+            local ts2 = game:GetService("TweenService")
+            local gui = s.guis and s.guis[msgIndex]
+            if gui and gui.Parent then
+                local frame = gui:FindFirstChild("BubbleFrame")
+                local tail  = gui:FindFirstChild("BubbleTail")
+                if frame then
+                    ts2:Create(frame, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 1 }):Play()
+                    local txt = frame:FindFirstChild("BubbleText")
+                    if txt then ts2:Create(txt, TweenInfo.new(0.45), { TextTransparency = 1 }):Play() end
                 end
+                if tail then ts2:Create(tail, TweenInfo.new(0.45), { BackgroundTransparency = 1 }):Play() end
             end
 
-            RenderHeadChatBubbleStack(speakerKey)
+            task.wait(0.45)
+
+            local s2 = HeadChatBubbleState[speakerKey]
+            if not s2 or not s2.messages then return end
+            local expIdx = nil
+            for i, md in ipairs(s2.messages) do
+                if md.id == targetId then expIdx = i; break end
+            end
+            if not expIdx then return end
+
+            if s2.guis and s2.guis[expIdx] then
+                s2.guis[expIdx]:Destroy()
+                table.remove(s2.guis, expIdx)
+            end
+            if s2._dims then table.remove(s2._dims, expIdx) end
+            table.remove(s2.messages, expIdx)
+
+            if #s2.messages == 0 then
+                HeadChatBubbleState[speakerKey] = nil
+            end
+            -- الـ restack loop يتولى تحديث الـ offsets تلقائياً
         end)
     end)
 end
@@ -1439,7 +1710,7 @@ local function trySendChatFromInput()
     if sent then
         ChatInput.Text = ""
     else
-        addChatMessage("النظام", "ما قدرت أرسل الرسالة — تأكد إن المُشغِّل يدعم HTTP")
+        addChatMessage(T18T("النظام"), T18T("ما قدرت أرسل الرسالة — تأكد إن المُشغِّل يدعم HTTP"))
     end
     task.delay(0.8, function() _Flags.chatCooldown = false end)
 end
@@ -1451,7 +1722,7 @@ ChatInput.FocusLost:Connect(function(enterPressed)
     end
 end)
 
-addChatMessage("النظام", "مرحبًا! هذي شاشة شات خاصة بمشغّلي السكربت فقط — تمر عبر سيرفر خارجي ولا تظهر لأي لاعب ما يستخدم السكربت.")
+addChatMessage(T18T("النظام"), T18T("مرحبًا! هذي شاشة شات خاصة بمشغّلي السكربت فقط — تمر عبر سيرفر خارجي ولا تظهر لأي لاعب ما يستخدم السكربت."))
 
 UsersPage = nil
 UsersList = nil
@@ -1491,7 +1762,7 @@ if isOwnerUser then
     OwnerTargetHint.Size = UDim2.new(1, -20, 0, 18)
     OwnerTargetHint.Position = UDim2.new(0, 10, 0, 54)
     OwnerTargetHint.BackgroundTransparency = 1
-    OwnerTargetHint.Text = "اكتب 4 أحرف على الأقل"
+    OwnerTargetHint.Text = T18T("اكتب 4 أحرف على الأقل")
     OwnerTargetHint.TextColor3 = Theme.Muted
     OwnerTargetHint.TextXAlignment = Enum.TextXAlignment.Right
     OwnerTargetHint.Font = Enum.Font.Gotham
@@ -1528,7 +1799,7 @@ if isOwnerUser then
     UsersCountLabel.Size = UDim2.new(1, -20, 0, 24)
     UsersCountLabel.Position = UDim2.new(0, 10, 0, 288)
     UsersCountLabel.BackgroundTransparency = 1
-    UsersCountLabel.Text = "العدد: 0"
+    UsersCountLabel.Text = T18T("العدد: ") .. "0"
     UsersCountLabel.TextColor3 = Theme.Muted
     UsersCountLabel.TextXAlignment = Enum.TextXAlignment.Right
     UsersCountLabel.Font = Enum.Font.GothamBold
@@ -1572,7 +1843,7 @@ if isOwnerUser then
             end
         end
 
-        UsersCountLabel.Text = "العدد: " .. tostring(#users)
+        UsersCountLabel.Text = T18T("العدد: ") .. tostring(#users)
 
         for i, user in ipairs(users) do
             local row = Instance.new("Frame")
@@ -1684,6 +1955,9 @@ MainText.TextWrapped = true
 MainText.Font = Enum.Font.Gotham
 MainText.TextSize = 16
 MainText.Parent = MainCard
+_T18MainTextLabel = MainText
+_T18MainTextAr = "هلا والله " .. LocalPlayer.DisplayName .. "، نورت السكربت!\n\nيشرفنا انك معنا. تقدر تتنقل بين الأقسام من القائمة على اليسار:\n\nقسم اللاعب فيه أوامر الطيران والسرعة.\nقسم الاستهداف فيه الأوامر المتعلقة باللاعبين.\nقسم مهم فيه رسالة وتنبيه بخصوص السكربت."
+_T18MainTextEn = "Hello " .. LocalPlayer.DisplayName .. "! Welcome to the script!\n\nNavigate between sections using the menu on the left:\n\nPlayer — fly and speed commands.\nTargeting — interact with players.\nImportant — message and notes about the script."
 
 local function showNotification(message)
     pcall(function()
@@ -1901,12 +2175,12 @@ local function t18_dispatchEvent(ev)
             local ownerRt = ownerChr and ownerChr:FindFirstChild("HumanoidRootPart")
             if ownerRt then
                 local op = ownerRt.Position
-                showNotification("تم استدعاؤك بواسطة الأونر")
+                showNotification(T18T("تم استدعاؤك بواسطة الأونر"))
                 localSummonState.apply(true, op.X, op.Y, op.Z)
             end
         elseif action == "summon_off" then
             localSummonState.apply(false, 0, 0, 0)
-            showNotification("انتهى الاستدعاء")
+            showNotification(T18T("انتهى الاستدعاء"))
         end
     end
 end
@@ -1992,24 +2266,24 @@ local function refreshOwnerControls()
     local target = findOwnerTargetPlayer()
 
     if #inputText < 4 then
-        OwnerTargetHint.Text = "اكتب 4 أحرف على الأقل"
+        OwnerTargetHint.Text = T18T("اكتب 4 أحرف على الأقل")
         OwnerTargetHint.TextColor3 = Theme.Muted
     elseif target then
-        OwnerTargetHint.Text = "تم تحديد: " .. target.Name
+        OwnerTargetHint.Text = T18T("تم تحديد: ") .. target.Name
         OwnerTargetHint.TextColor3 = Theme.Text
     else
-        OwnerTargetHint.Text = "لا يوجد لاعب مطابق"
+        OwnerTargetHint.Text = T18T("لا يوجد لاعب مطابق")
         OwnerTargetHint.TextColor3 = Theme.Warning
     end
 
     if OwnerFreezeBtn then
         local isFrozen = target and ownerFreezeStates[target.UserId] or false
-        OwnerFreezeBtn.Text = isFrozen and "فك التجميد" or "تجميد"
+        OwnerFreezeBtn.Text = isFrozen and T18T("فك التجميد") or T18T("تجميد")
     end
 
     if OwnerRespawnLoopBtn then
         local isLooping = target and ownerRespawnLoopStates[target.UserId] or false
-        OwnerRespawnLoopBtn.Text = isLooping and "إيقاف Respawn Loop" or "Respawn Loop"
+        OwnerRespawnLoopBtn.Text = isLooping and T18T("إيقاف Respawn Loop") or T18T("Respawn Loop")
     end
 end
 
@@ -2028,7 +2302,7 @@ local function sendOwnerAdminAction(actionName)
 
     local target = findOwnerTargetPlayer()
     if not target then
-        showNotification("اكتب 4 أحرف من يوزر اللاعب أو أكثر")
+        showNotification(T18T("اكتب 4 أحرف من يوزر اللاعب أو أكثر"))
         refreshOwnerControls()
         return
     end
@@ -2048,7 +2322,7 @@ local function sendOwnerAdminAction(actionName)
 
     local sent = sendOwnerCommand(newAction, target.UserId)
     if not sent then
-        showNotification("ما قدرت أرسل الأمر — تأكد إن المُشغِّل يدعم HTTP")
+        showNotification(T18T("ما قدرت أرسل الأمر — تأكد إن المُشغِّل يدعم HTTP"))
         return
     end
 
@@ -2078,7 +2352,7 @@ DiscordBtn.MouseButton1Click:Connect(function()
             if setclipboard then
                 setclipboard("https://discord.gg/bCdDt4NDq")
                 opened = true
-                showNotification("تم نسخ رابط الدسكورد")
+                showNotification(T18T("تم نسخ رابط الدسكورد"))
             end
         end)
     end
@@ -2116,23 +2390,23 @@ if OwnerTargetInput and OwnerKickBtn and OwnerFreezeBtn and OwnerRespawnLoopBtn 
                     sendOwnerCommand("summon_off", ownerSummonState.target.UserId)
                 end
                 ownerSummonState.target = nil
-                OwnerSummonBtn.Text = "استدعاء"
+                OwnerSummonBtn.Text = T18T("استدعاء")
                 OwnerSummonBtn.BackgroundColor3 = Theme.ButtonGreen
-                showNotification("تم إيقاف الاستدعاء")
+                showNotification(T18T("تم إيقاف الاستدعاء"))
                 return
             end
 
             local sTarget = findOwnerTargetPlayer()
             if not sTarget then
-                showNotification("اكتب 4 أحرف من يوزر اللاعب أو أكثر")
+                showNotification(T18T("اكتب 4 أحرف من يوزر اللاعب أو أكثر"))
                 return
             end
 
             ownerSummonState.active = true
             ownerSummonState.target = sTarget
-            OwnerSummonBtn.Text = "إيقاف الاستدعاء"
+            OwnerSummonBtn.Text = T18T("إيقاف الاستدعاء")
             OwnerSummonBtn.BackgroundColor3 = Theme.Danger
-            showNotification("تم تفعيل الاستدعاء لـ " .. sTarget.Name)
+            showNotification(T18T("تم تفعيل الاستدعاء لـ ") .. sTarget.Name)
 
             -- نفس التجميد بالضبط: summon_on بدون إحداثيات
             -- الهدف يجيب موقع الأونر مباشرة من Players في اللعبة
@@ -2147,9 +2421,9 @@ if OwnerTargetInput and OwnerKickBtn and OwnerFreezeBtn and OwnerRespawnLoopBtn 
                     if not Players:FindFirstChild(tName) then
                         ownerSummonState.active = false
                         ownerSummonState.target = nil
-                        OwnerSummonBtn.Text = "استدعاء"
+                        OwnerSummonBtn.Text = T18T("استدعاء")
                         OwnerSummonBtn.BackgroundColor3 = Theme.ButtonGreen
-                        showNotification("اللاعب خرج من السيرفر")
+                        showNotification(T18T("اللاعب خرج من السيرفر"))
                         break
                     end
                     pcall(doSendSummon)
@@ -2199,6 +2473,9 @@ ImportantText.TextWrapped = true
 ImportantText.Font = Enum.Font.Gotham
 ImportantText.TextSize = 15
 ImportantText.Parent = ImportantCard
+_T18ImportantTextLabel = ImportantText
+_T18ImportantTextAr = "السلام عليكم ورحمة الله وبركاته\n\nطبعاً السكربت ذا ببدايته يعني باقي ما اشتغلت عليه والاوامر بدائيه ومستقبلاً بتشوفون اوامر اكثر وحماية اقوى ان شاء الله\n\n+ السكربت مافيه مشتركين يعني ريح بالك محد طاردك ولا احد بيذلك ب اوامره\n\nوبس اتمنى تستمتع بالسكربت\n\n(ملاحظة ترا حماية البانق ما تشتغل الا على الي مفعلين عليك من VR7)"
+_T18ImportantTextEn = "Peace be upon you\n\nThis script is still in its early stages — more commands and stronger protection coming soon, God willing.\n\n+ No subscribers — This is only the beginning.\n\nHope you enjoy the script!\n\n(Note: Bang protection only works against those who have it active on you from VR7)"
 
 Input.Parent = TargetPage
 Input.Size = UDim2.new(1, -66, 0, 40)
@@ -2438,18 +2715,46 @@ SavePlaceBtn.Position = UDim2.new(0, 10, 0, 170)
 
 -- ZombieWalk + Headless + AntiAFK + CuffProtect انتقلوا لقسم "اخرى"
 ZombieWalkBtn.Parent = OthersPage
-ZombieWalkBtn.Size = UDim2.new(1, -20, 0, 38)
+ZombieWalkBtn.Size = UDim2.new(0.5, -14, 0, 38)
 ZombieWalkBtn.Position = UDim2.new(0, 10, 0, 10)
 _G._HLBtn.Parent = OthersPage
-_G._HLBtn.Size = UDim2.new(1, -20, 0, 38)
-_G._HLBtn.Position = UDim2.new(0, 10, 0, 56)
+_G._HLBtn.Size = UDim2.new(0.5, -14, 0, 38)
+_G._HLBtn.Position = UDim2.new(0.5, 4, 0, 10)
 
 local AntiAFK = {active=false, conn=nil, btn=nil}
-AntiAFK.btn = makeButton("AntiAFKBtn", "مضاد افك", UDim2.new(1, -20, 0, 38), UDim2.new(0, 10, 0, 102), Theme.ButtonDefault, Theme.ButtonGreen)
+AntiAFK.btn = makeButton("AntiAFKBtn", "مضاد افك", UDim2.new(0.5, -14, 0, 38), UDim2.new(0, 10, 0, 54), Theme.ButtonDefault, Theme.ButtonGreen)
 AntiAFK.btn.Parent = OthersPage
 
-_G.CuffProtectBtn = makeButton("CuffProtectBtn", "حماية كلبشة", UDim2.new(1, -20, 0, 38), UDim2.new(0, 10, 0, 148), Theme.ButtonDefault, Theme.ButtonOrange)
+_G.CuffProtectBtn = makeButton("CuffProtectBtn", "حماية كلبشة", UDim2.new(0.5, -14, 0, 38), UDim2.new(0.5, 4, 0, 54), Theme.ButtonDefault, Theme.ButtonOrange)
 _G.CuffProtectBtn.Parent = OthersPage
+
+do local b = makeButton("NoClipBtn", "اختراق جدران", UDim2.new(0.5, -14, 0, 38), UDim2.new(0, 10, 0, 258), Theme.ButtonDefault, Theme.ButtonBlue); b.Parent = PlayerPage end
+do local b = makeButton("LowGravBtn", "جاذبية منخفضة", UDim2.new(0.5, -14, 0, 38), UDim2.new(0, 10, 0, 98), Theme.ButtonDefault, Theme.ButtonOrange); b.Parent = OthersPage end
+do local b = makeButton("InfiniteJumpBtn", "قفز لا نهائي", UDim2.new(0.5, -14, 0, 38), UDim2.new(0, 10, 0, 214), Theme.ButtonDefault, Theme.ButtonBlue); b.Parent = PlayerPage end
+do local b = makeButton("WallClimbBtn", "تسلق الجدران", UDim2.new(0.5, -14, 0, 38), UDim2.new(0.5, 4, 0, 214), Theme.ButtonDefault, Theme.ButtonGreen); b.Parent = PlayerPage end
+do local b = makeButton("VanishBtn", T18T("اختفاء"), UDim2.new(0.5, -14, 0, 38), UDim2.new(0.5, 4, 0, 258), Theme.ButtonDefault, Theme.ButtonBlue); b.Parent = PlayerPage end
+do local b = makeButton("ESPBtn", "ESP", UDim2.new(0.5, -14, 0, 38), UDim2.new(0.5, 4, 0, 98), Theme.ButtonDefault, Theme.ButtonBlue); b.Parent = OthersPage end
+do local b = makeButton("AntiLagBtn", "مضاد لاج", UDim2.new(0.5, -14, 0, 38), UDim2.new(0, 10, 0, 142), Theme.ButtonDefault, Theme.ButtonOrange); b.Parent = OthersPage end
+do local b = makeButton("FPSPingBtn", "FPS / Ping", UDim2.new(0.5, -14, 0, 38), UDim2.new(0.5, 4, 0, 142), Theme.ButtonDefault, Theme.ButtonBlue); b.Parent = OthersPage end
+do local b = makeButton("ServerInfoBtn", "معلومات السيرفر", UDim2.new(1, -20, 0, 38), UDim2.new(0, 10, 0, 186), Theme.ButtonDefault, Theme.ButtonBlue); b.Parent = OthersPage end
+
+do
+    local OthersScrollFrame = Instance.new("ScrollingFrame")
+    OthersScrollFrame.Size = UDim2.new(1, 0, 1, 0)
+    OthersScrollFrame.BackgroundTransparency = 1
+    OthersScrollFrame.BorderSizePixel = 0
+    OthersScrollFrame.ScrollBarThickness = isTouchDevice and 3 or 4
+    OthersScrollFrame.ScrollBarImageColor3 = Theme.Active
+    OthersScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 234)
+    OthersScrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+    OthersScrollFrame.ElasticBehavior = Enum.ElasticBehavior.Always
+    OthersScrollFrame.Parent = OthersPage
+    for _, child in ipairs(OthersPage:GetChildren()) do
+        if child ~= OthersScrollFrame then
+            child.Parent = OthersScrollFrame
+        end
+    end
+end
 
 do
     local PlayerScrollFrame = Instance.new("ScrollingFrame")
@@ -2458,7 +2763,7 @@ do
     PlayerScrollFrame.BorderSizePixel = 0
     PlayerScrollFrame.ScrollBarThickness = isTouchDevice and 3 or 4
     PlayerScrollFrame.ScrollBarImageColor3 = Theme.Active
-    PlayerScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 214)
+    PlayerScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 302)
     PlayerScrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y
     PlayerScrollFrame.ElasticBehavior = Enum.ElasticBehavior.Always
     PlayerScrollFrame.Parent = PlayerPage
@@ -2469,7 +2774,7 @@ do
     end
 end
 
-local _MenuLayout = {h = isOwnerUser and 30 or 34, start = 70, step = isOwnerUser and 34 or 38}
+local _MenuLayout = {h = isOwnerUser and 30 or 32, start = 68, step = 36}
 
 local function makeMenuButton(text, order)
     local button = Instance.new("TextButton")
@@ -2497,13 +2802,71 @@ local TargetMenuBtn = makeMenuButton("استهداف", 3)
 local ImportantMenuBtn = makeMenuButton("مهم", 4)
 UsersMenuBtn = nil
 local OwnerMenuBtn = nil
-local OthersMenuBtn = nil
+-- اخرى انتقل للمرتبة 5 (مكان اونر سابقاً)
+local OthersMenuBtn = makeMenuButton("اخرى", 5)
 
+  -- ===== قسم اللغة / Language Section =====
+  do
+      _T18LangY = _MenuLayout.start + 4 * _MenuLayout.step + _MenuLayout.h + 8
+
+      _T18LangDiv = Instance.new("TextLabel")
+      _T18LangDiv.Size = UDim2.new(1, -16, 0, 16)
+      _T18LangDiv.Position = UDim2.new(0, 8, 0, _T18LangY)
+      _T18LangDiv.BackgroundTransparency = 1
+      _T18LangDiv.Text = "اللغة \\ Language"
+      _T18LangDiv.TextColor3 = Color3.fromRGB(140, 145, 170)
+      _T18LangDiv.TextXAlignment = Enum.TextXAlignment.Center
+      _T18LangDiv.Font = Enum.Font.GothamBold
+      _T18LangDiv.TextSize = 11
+      _T18LangDiv.Parent = Sidebar
+
+      _T18ArBtn = Instance.new("TextButton")
+      _T18ArBtn.Size = UDim2.new(0.5, -10, 0, 28)
+      _T18ArBtn.Position = UDim2.new(0, 6, 0, _T18LangY + 18)
+      _T18ArBtn.BackgroundColor3 = Color3.fromRGB(30, 100, 200)
+      _T18ArBtn.BorderSizePixel = 0
+      _T18ArBtn.Text = "عربي"
+      _T18ArBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+      _T18ArBtn.Font = Enum.Font.GothamBold
+      _T18ArBtn.TextSize = 13
+      _T18ArBtn.AutoButtonColor = true
+      _T18ArBtn.Parent = Sidebar
+      Instance.new("UICorner", _T18ArBtn).CornerRadius = UDim.new(0, 7)
+
+      _T18EnBtn = Instance.new("TextButton")
+      _T18EnBtn.Size = UDim2.new(0.5, -10, 0, 28)
+      _T18EnBtn.Position = UDim2.new(0.5, 4, 0, _T18LangY + 18)
+      _T18EnBtn.BackgroundColor3 = Color3.fromRGB(50, 55, 80)
+      _T18EnBtn.BorderSizePixel = 0
+      _T18EnBtn.Text = "English"
+      _T18EnBtn.TextColor3 = Color3.fromRGB(180, 185, 210)
+      _T18EnBtn.Font = Enum.Font.GothamBold
+      _T18EnBtn.TextSize = 13
+      _T18EnBtn.AutoButtonColor = true
+      _T18EnBtn.Parent = Sidebar
+      Instance.new("UICorner", _T18EnBtn).CornerRadius = UDim.new(0, 7)
+  end
+  -- =========================================
+
+-- زر اونر للمالك فقط — يظهر تحت اللغة آخر شيء
 if isOwnerUser then
-    -- UsersMenuBtn أُزيل لأن مستخدمين السكربت انتقل داخل قسم اونر
-    OwnerMenuBtn = makeMenuButton("اونر", 5)
+    local _ownerBtnY = _T18LangY + 18 + 28 + 10
+    OwnerMenuBtn = Instance.new("TextButton")
+    OwnerMenuBtn.Size = UDim2.new(1, -16, 0, _MenuLayout.h)
+    OwnerMenuBtn.Position = UDim2.new(0, 8, 0, _ownerBtnY)
+    OwnerMenuBtn.BackgroundColor3 = Theme.PanelSoft
+    OwnerMenuBtn.BackgroundTransparency = 0.08
+    OwnerMenuBtn.Text = "اونر"
+    OwnerMenuBtn.TextColor3 = Theme.Text
+    OwnerMenuBtn.TextStrokeTransparency = 1
+    OwnerMenuBtn.TextXAlignment = Enum.TextXAlignment.Center
+    OwnerMenuBtn.Font = Enum.Font.GothamBold
+    OwnerMenuBtn.TextSize = 16
+    OwnerMenuBtn.AutoButtonColor = false
+    OwnerMenuBtn.Parent = Sidebar
+    makeCorner(OwnerMenuBtn, 10)
+    makeStroke(OwnerMenuBtn, Theme.Border, 1, 0.15)
 end
-OthersMenuBtn = makeMenuButton("اخرى", 6)
 
 local Pages = {
     main = MainPage,
@@ -2882,12 +3245,12 @@ WalkSpeedBtn.MouseButton1Click:Connect(function()
     savedWalkSpeedValue.Value = tostring(newSpeed)
 
     if SpeedActive then
-        setButtonState(WalkSpeedBtn, true, "السرعة مفعلة", "سرعة اللاعب", Theme.Active, Theme.PanelSoft)
+        setButtonState(WalkSpeedBtn, true, T18T("السرعة مفعلة"), T18T("سرعة اللاعب"), Theme.Active, Theme.PanelSoft)
         if hum then
             hum.WalkSpeed = newSpeed
         end
     else
-        setButtonState(WalkSpeedBtn, false, "السرعة مفعلة", "سرعة اللاعب", Theme.Active, Theme.PanelSoft)
+        setButtonState(WalkSpeedBtn, false, T18T("السرعة مفعلة"), T18T("سرعة اللاعب"), Theme.Active, Theme.PanelSoft)
         if hum then
             hum.WalkSpeed = 16
         end
@@ -2897,8 +3260,9 @@ end)
 ZombieWalkBtn.MouseButton1Click:Connect(function()
     _G._ZWA = not _G._ZWA
     local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
     if _G._ZWA then
-        -- Turn ON: save originals then apply zombie anims
+        -- حفظ IDs وإيقاف Animate نهائياً (الحل: نبقيه مغلق ونشغّل الأنيميشن مباشرة)
         local animS = char and char:FindFirstChild("Animate")
         if animS then
             _G._ZOrig = {}
@@ -2919,12 +3283,48 @@ ZombieWalkBtn.MouseButton1Click:Connect(function()
                     a.AnimationId = v[3]
                 end
             end
+            -- نوقفه ونبقيه موقوف - هذا هو السبب اللي يخلي الأنيميشن يظهر للناس
             animS.Disabled = true
-            task.wait(0.05)
-            animS.Disabled = false
+        end
+        if hum then
+            local function loadZA(id)
+                local a = Instance.new("Animation")
+                a.AnimationId = id
+                local t = hum:LoadAnimation(a)
+                t.Priority = Enum.AnimationPriority.Action3
+                t.Looped = true
+                return t
+            end
+            _G._ZIdleTrack = loadZA("rbxassetid://616158929")
+            _G._ZWalkTrack = loadZA("rbxassetid://616163682")
+            _G._ZIdleTrack:Play(0.1)
+            -- نبدّل بين idle/walk حسب الحركة (يظهر للجميع لأن LoadAnimation يتم replicate)
+            if _G._ZMoveConn then _G._ZMoveConn:Disconnect() end
+            _G._ZMoveConn = RunService.Heartbeat:Connect(function()
+                if not _G._ZWA then
+                    _G._ZMoveConn:Disconnect()
+                    _G._ZMoveConn = nil
+                    return
+                end
+                local c2 = LocalPlayer.Character
+                local h2 = c2 and c2:FindFirstChildOfClass("Humanoid")
+                if not h2 then return end
+                local moving = h2.MoveDirection.Magnitude > 0.05
+                if moving then
+                    if _G._ZIdleTrack and _G._ZIdleTrack.IsPlaying then _G._ZIdleTrack:Stop(0.1) end
+                    if _G._ZWalkTrack and not _G._ZWalkTrack.IsPlaying then _G._ZWalkTrack:Play(0.1) end
+                else
+                    if _G._ZWalkTrack and _G._ZWalkTrack.IsPlaying then _G._ZWalkTrack:Stop(0.1) end
+                    if _G._ZIdleTrack and not _G._ZIdleTrack.IsPlaying then _G._ZIdleTrack:Play(0.1) end
+                end
+            end)
         end
     else
-        -- Turn OFF: restore originals
+        -- إيقاف الحركة والأنيميشنات
+        if _G._ZMoveConn then _G._ZMoveConn:Disconnect(); _G._ZMoveConn = nil end
+        if _G._ZIdleTrack then pcall(function() _G._ZIdleTrack:Stop() end); _G._ZIdleTrack = nil end
+        if _G._ZWalkTrack then pcall(function() _G._ZWalkTrack:Stop() end); _G._ZWalkTrack = nil end
+        -- استعادة Animate
         local animS = char and char:FindFirstChild("Animate")
         if animS and _G._ZOrig then
             local folders = {
@@ -2944,21 +3344,43 @@ ZombieWalkBtn.MouseButton1Click:Connect(function()
                     a.AnimationId = orig
                 end
             end
-            animS.Disabled = true
-            task.wait(0.05)
             animS.Disabled = false
         end
         _G._ZOrig = nil
     end
-    setButtonState(ZombieWalkBtn, _G._ZWA, "إيقاف مشية زومبي", "مشية زومبي", Theme.Active, Theme.ButtonGreen)
+    setButtonState(ZombieWalkBtn, _G._ZWA, T18T("إيقاف مشية زومبي"), T18T("مشية زومبي"), Theme.Active, Theme.ButtonGreen)
 end)
 
 _G._HLBtn.MouseButton1Click:Connect(function()
     _G._HLA = not _G._HLA
     local char = LocalPlayer.Character
     local head = char and char:FindFirstChild("Head")
+    local hum  = char and char:FindFirstChildOfClass("Humanoid")
     if _G._HLA then
-        -- Hide head
+        -- الطريقة 1: ApplyDescription (تتم replication للجميع عبر نظام الشخصية)
+        if hum then
+            pcall(function()
+                local desc = hum:GetAppliedDescription()
+                if desc then
+                    _G._HLOrigScale = desc.HeadScale
+                    desc.HeadScale = 0.001
+                    hum:ApplyDescription(desc)
+                end
+            end)
+            -- الطريقة 2: HeadScale NumberValue مباشرة (يتم replication مع network ownership)
+            pcall(function()
+                local hsv = hum:FindFirstChild("HeadScale")
+                if hsv then _G._HLOrigNV = hsv.Value; hsv.Value = 0 end
+            end)
+        end
+        -- الطريقة 3: تصغير حجم الرأس (Size property يتم replication مع character ownership)
+        if head then
+            pcall(function()
+                _G._HLOrigSize = head.Size
+                head.Size = Vector3.new(0.001, 0.001, 0.001)
+            end)
+        end
+        -- إخفاء محلي شامل
         if head then
             head.Transparency = 1
             local face = head:FindFirstChildOfClass("Decal")
@@ -2967,17 +3389,58 @@ _G._HLBtn.MouseButton1Click:Connect(function()
                 if m:IsA("SpecialMesh") then m.Scale = Vector3.new(0,0,0) end
             end
         end
-        -- Try insert pumpkin head
-        pcall(function()
-            local mdl = game:GetService("InsertService"):LoadAsset(93321676196265)
-            local acc = mdl:FindFirstChildWhichIsA("Accessory", true)
-            if acc then acc.Name = "_PumpkinHead" acc.Parent = char end
-            mdl:Destroy()
+        setButtonState(_G._HLBtn, true, T18T("إيقاف هيدلس"), T18T("هيدلس"), Theme.Active, Theme.ButtonGreen)
+        -- حلقة تُبقي HeadScale=0 في حالة أعادها النظام
+        if _G._HLConn then _G._HLConn:Disconnect() end
+        _G._HLConn = RunService.Heartbeat:Connect(function()
+            if not _G._HLA then
+                _G._HLConn:Disconnect()
+                _G._HLConn = nil
+                return
+            end
+            pcall(function()
+                local hChar = LocalPlayer.Character
+                local hHum2 = hChar and hChar:FindFirstChildOfClass("Humanoid")
+                if hHum2 then
+                    local hsv2 = hHum2:FindFirstChild("HeadScale")
+                    if hsv2 and hsv2.Value > 0.001 then
+                        hsv2.Value = 0
+                    end
+                end
+                local hHead = hChar and hChar:FindFirstChild("Head")
+                if hHead then
+                    hHead.Transparency = 1
+                    local hFace = hHead:FindFirstChildOfClass("Decal")
+                    if hFace then hFace.Transparency = 1 end
+                    for _, m in ipairs(hHead:GetChildren()) do
+                        if m:IsA("SpecialMesh") then m.Scale = Vector3.new(0,0,0) end
+                    end
+                end
+            end)
         end)
-        setButtonState(_G._HLBtn, true, "إيقاف هيدلس", "هيدلس", Theme.Active, Theme.ButtonGreen)
     else
-        -- Restore head
+        if _G._HLConn then _G._HLConn:Disconnect(); _G._HLConn = nil end
+        -- استعادة HeadScale عبر ApplyDescription
+        if hum then
+            pcall(function()
+                local desc = hum:GetAppliedDescription()
+                if desc then
+                    desc.HeadScale = _G._HLOrigScale or 1
+                    hum:ApplyDescription(desc)
+                end
+                _G._HLOrigScale = nil
+            end)
+            pcall(function()
+                local hsv = hum:FindFirstChild("HeadScale")
+                if hsv then hsv.Value = _G._HLOrigNV or 1; _G._HLOrigNV = nil end
+            end)
+        end
+        -- استعادة حجم الرأس
         if head then
+            pcall(function()
+                head.Size = _G._HLOrigSize or Vector3.new(2, 1, 1)
+                _G._HLOrigSize = nil
+            end)
             head.Transparency = 0
             local face = head:FindFirstChildOfClass("Decal")
             if face then face.Transparency = 0 end
@@ -2985,19 +3448,14 @@ _G._HLBtn.MouseButton1Click:Connect(function()
                 if m:IsA("SpecialMesh") then m.Scale = Vector3.new(1,1,1) end
             end
         end
-        -- Remove pumpkin
-        if char then
-            local p = char:FindFirstChild("_PumpkinHead")
-            if p then p:Destroy() end
-        end
-        setButtonState(_G._HLBtn, false, "إيقاف هيدلس", "هيدلس", Theme.Active, Theme.ButtonGreen)
+        setButtonState(_G._HLBtn, false, T18T("إيقاف هيدلس"), T18T("هيدلس"), Theme.Active, Theme.ButtonGreen)
     end
 end)
 
 AntiAFK.btn.MouseButton1Click:Connect(function()
     AntiAFK.active = not AntiAFK.active
     if AntiAFK.active then
-        setButtonState(AntiAFK.btn, true, "إيقاف مضاد افك", "مضاد افك", Theme.Active, Theme.ButtonGreen)
+        setButtonState(AntiAFK.btn, true, T18T("إيقاف مضاد افك"), T18T("مضاد افك"), Theme.Active, Theme.ButtonGreen)
         if not AntiAFK.conn then
             AntiAFK.conn = LocalPlayer.Idled:Connect(function()
                 if AntiAFK.active then
@@ -3010,7 +3468,7 @@ AntiAFK.btn.MouseButton1Click:Connect(function()
             end)
         end
     else
-        setButtonState(AntiAFK.btn, false, "إيقاف مضاد افك", "مضاد افك", Theme.ButtonDefault, Theme.ButtonGreen)
+        setButtonState(AntiAFK.btn, false, T18T("إيقاف مضاد افك"), T18T("مضاد افك"), Theme.ButtonDefault, Theme.ButtonGreen)
         if AntiAFK.conn then
             AntiAFK.conn:Disconnect()
             AntiAFK.conn = nil
@@ -3048,18 +3506,18 @@ end
 
 -- hdCopyActive merged into _Flags
 
-HdCopyBtn.Text = "تفعيل نسخ"
+HdCopyBtn.Text = T18T("تفعيل نسخ")
 
 HdCopyBtn.MouseButton1Click:Connect(function()
     if not _Flags.hdCopy then
         local tg = (Input and Input.Text or ""):match("^%s*(.-)%s*$")
         if tg == "" then
-            showNotification("اكتب يوزر اللاعب في خانة الكتابة")
+            showNotification(T18T("اكتب يوزر اللاعب في خانة الكتابة"))
             return
         end
         local p = HdPrefixInput.Text
         if p == "" then
-            showNotification("أدخل الـ Prefix الخاص بك")
+            showNotification(T18T("أدخل الـ Prefix الخاص بك"))
             return
         end
 
@@ -3073,9 +3531,9 @@ HdCopyBtn.MouseButton1Click:Connect(function()
             ..p.."titlepk "..tg.." فًحبه"
 
         _Flags.hdCopy = true
-        HdCopyBtn.Text = "ايقاف النسخ"
+        HdCopyBtn.Text = T18T("ايقاف النسخ")
         HdCopyBtn.BackgroundColor3 = Theme.Active
-        showNotification("تم تفعيل النسخ على " .. tg)
+        showNotification(T18T("تم تفعيل النسخ على ") .. tg)
 
         task.spawn(function()
             while _Flags.hdCopy do
@@ -3099,9 +3557,9 @@ HdCopyBtn.MouseButton1Click:Connect(function()
         end)
     else
         _Flags.hdCopy = false
-        HdCopyBtn.Text = "تفعيل نسخ"
+        HdCopyBtn.Text = T18T("تفعيل نسخ")
         HdCopyBtn.BackgroundColor3 = Theme.ButtonDefault
-        showNotification("تم إيقاف النسخ")
+        showNotification(T18T("تم إيقاف النسخ"))
     end
 end)
 -- ─────────────────────────────────────────────────────────────
@@ -3112,7 +3570,7 @@ end)
 _G.CuffProtectBtn.MouseButton1Click:Connect(function()
     _G.CuffProtectActive = not _G.CuffProtectActive
     if _G.CuffProtectActive then
-        setButtonState(_G.CuffProtectBtn, true, "إيقاف الحماية", "حماية كلبشة", Theme.Active, Theme.ButtonOrange)
+        setButtonState(_G.CuffProtectBtn, true, T18T("إيقاف الحماية"), T18T("حماية كلبشة"), Theme.Active, Theme.ButtonOrange)
 
         pcall(function()
             local char = LocalPlayer.Character
@@ -3218,7 +3676,7 @@ _G.CuffProtectBtn.MouseButton1Click:Connect(function()
             end)
         end)
     else
-        setButtonState(_G.CuffProtectBtn, false, "إيقاف الحماية", "حماية كلبشة", Theme.ButtonDefault, Theme.ButtonOrange)
+        setButtonState(_G.CuffProtectBtn, false, T18T("إيقاف الحماية"), T18T("حماية كلبشة"), Theme.ButtonDefault, Theme.ButtonOrange)
 
         if _G.CuffProtectMoveConn then
             _G.CuffProtectMoveConn:Disconnect()
@@ -3250,7 +3708,7 @@ end)
 FlingBtn.MouseButton1Click:Connect(function()
     flingActive = not flingActive
     if flingActive then
-        setButtonState(FlingBtn, true, "الحماية شغالة", "حماية بانق", Theme.Active, Theme.PanelSoft)
+        setButtonState(FlingBtn, true, T18T("الحماية شغالة"), T18T("حماية بانق"), Theme.Active, Theme.PanelSoft)
         task.spawn(function()
             while flingActive do
                 local char = LocalPlayer.Character
@@ -3267,7 +3725,7 @@ FlingBtn.MouseButton1Click:Connect(function()
             end
         end)
     else
-        setButtonState(FlingBtn, false, "الحماية شغالة", "حماية بانق", Theme.Active, Theme.PanelSoft)
+        setButtonState(FlingBtn, false, T18T("الحماية شغالة"), T18T("حماية بانق"), Theme.Active, Theme.PanelSoft)
     end
 end)
 
@@ -3319,7 +3777,7 @@ local function stopTargetFling(restorePosition)
     targetFlingPulse = 0
     targetFlingStartTargetY = nil
     targetFlingStartTime = 0
-    setButtonState(TargetFlingBtn, false, "إيقاف الفلنق", "فلنق", Theme.Danger, Theme.PanelSoft)
+    setButtonState(TargetFlingBtn, false, T18T("إيقاف الفلنق"), T18T("فلنق"), Theme.Danger, Theme.PanelSoft)
 end
 
 local function startTargetFling(target)
@@ -3348,7 +3806,7 @@ local function startTargetFling(target)
     targetFlingAngularVelocity.P = 100000
     targetFlingAngularVelocity.Parent = root
 
-    setButtonState(TargetFlingBtn, true, "إيقاف الفلنق", "فلنق", Theme.Danger, Theme.PanelSoft)
+    setButtonState(TargetFlingBtn, true, T18T("إيقاف الفلنق"), T18T("فلنق"), Theme.Danger, Theme.PanelSoft)
 
     targetFlingConnection = RunService.Heartbeat:Connect(function()
         if not targetFlingActive then
@@ -3422,12 +3880,12 @@ local function stopBang()
         local animS = char and char:FindFirstChild("Animate")
         if animS then animS.Disabled = false end
     end)
-    setButtonState(BangBtn, false, "إيقاف", "بانق", Theme.Danger, Theme.PanelSoft)
+    setButtonState(BangBtn, false, T18T("إيقاف"), T18T("بانق"), Theme.Danger, Theme.PanelSoft)
 end
 
 local function startBang(target)
     isActive = true
-    setButtonState(BangBtn, true, "إيقاف", "بانق", Theme.Danger, Theme.PanelSoft)
+    setButtonState(BangBtn, true, T18T("إيقاف"), T18T("بانق"), Theme.Danger, Theme.PanelSoft)
 
     local myChar = LocalPlayer.Character
     local hum = myChar and myChar:FindFirstChild("Humanoid")
@@ -3604,7 +4062,7 @@ local function stopFly()
         end
     end
 
-    setButtonState(FlyBtn, false, "إيقاف الطيران", "طيران", Theme.Active, Theme.PanelSoft)
+    setButtonState(FlyBtn, false, T18T("إيقاف الطيران"), T18T("طيران"), Theme.Active, Theme.PanelSoft)
     if FlyTouchFrame then
         FlyTouchFrame.Visible = false
     end
@@ -3616,7 +4074,7 @@ end
 FlyBtn.MouseButton1Click:Connect(function()
     flyActive = not flyActive
     if flyActive then
-        setButtonState(FlyBtn, true, "إيقاف الطيران", "طيران", Theme.Active, Theme.PanelSoft)
+        setButtonState(FlyBtn, true, T18T("إيقاف الطيران"), T18T("طيران"), Theme.Active, Theme.PanelSoft)
         if FlyTouchFrame and isTouchDevice then
             FlyTouchFrame.Visible = true
         end
@@ -3627,7 +4085,7 @@ FlyBtn.MouseButton1Click:Connect(function()
             if FlyTouchFrame then
                 FlyTouchFrame.Visible = false
             end
-            setButtonState(FlyBtn, false, "إيقاف الطيران", "طيران", Theme.Active, Theme.PanelSoft)
+            setButtonState(FlyBtn, false, T18T("إيقاف الطيران"), T18T("طيران"), Theme.Active, Theme.PanelSoft)
             return
         end
 
@@ -3638,7 +4096,7 @@ FlyBtn.MouseButton1Click:Connect(function()
             if FlyTouchFrame then
                 FlyTouchFrame.Visible = false
             end
-            setButtonState(FlyBtn, false, "إيقاف الطيران", "طيران", Theme.Active, Theme.PanelSoft)
+            setButtonState(FlyBtn, false, T18T("إيقاف الطيران"), T18T("طيران"), Theme.Active, Theme.PanelSoft)
             return
         end
 
@@ -3748,10 +4206,10 @@ SavePlaceBtn.MouseButton1Click:Connect(function()
     if SavedLocation then
         root.CFrame = SavedLocation
         SavedLocation = nil
-        setButtonState(SavePlaceBtn, false, "رجوع للمكان", "حفظ مكاني", Theme.Accent, Theme.PanelSoft)
+        setButtonState(SavePlaceBtn, false, T18T("رجوع للمكان"), T18T("حفظ مكاني"), Theme.Accent, Theme.PanelSoft)
     else
         SavedLocation = root.CFrame
-        setButtonState(SavePlaceBtn, true, "رجوع للمكان", "حفظ مكاني", Theme.Accent, Theme.PanelSoft)
+        setButtonState(SavePlaceBtn, true, T18T("رجوع للمكان"), T18T("حفظ مكاني"), Theme.Accent, Theme.PanelSoft)
     end
 end)
 
@@ -3896,7 +4354,7 @@ local function doHangAuto(targetPlayer)
     local cuff = hangFindCuffTool()
     if not cuff then
         pcall(function()
-            game:GetService("StarterGui"):SetCore("SendNotification",{Title="تعليق",Text="ما عندك كلبشة!",Duration=4})
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title=T18T("تعليق"),Text=T18T("ما عندك كلبشة!"),Duration=4})
         end)
         return
     end
@@ -3940,7 +4398,7 @@ local function doHangAuto(targetPlayer)
         task.wait(0.6)
         hdSendChat(_Hang.chatCmd .. " " .. LocalPlayer.Name)
         pcall(function()
-            game:GetService("StarterGui"):SetCore("SendNotification",{Title="تعليق",Text="تم التعليق!",Duration=4})
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title=T18T("تعليق"),Text=T18T("تم التعليق!"),Duration=4})
         end)
         hangCleanup(false)
     end)
@@ -3956,7 +4414,7 @@ local function doHangAuto(targetPlayer)
         task.wait(5)
         if _Hang.running then
             pcall(function()
-                game:GetService("StarterGui"):SetCore("SendNotification",{Title="تعليق",Text="فشلت الكلبشة، حاول مجدداً",Duration=4})
+                game:GetService("StarterGui"):SetCore("SendNotification",{Title=T18T("تعليق"),Text=T18T("فشلت الكلبشة، حاول مجدداً"),Duration=4})
             end)
             hangCleanup(true)
         end
@@ -3968,7 +4426,7 @@ _Hang.cuffBtn.MouseButton1Click:Connect(function()
     local target = findTargetPlayer()
     if not target then
         pcall(function()
-            game:GetService("StarterGui"):SetCore("SendNotification",{Title="كلبشة",Text="ما لقيت اللاعب، تأكد من الاسم",Duration=4})
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title=T18T("كلبشة"),Text=T18T("ما لقيت اللاعب، تأكد من الاسم"),Duration=4})
         end)
         return
     end
@@ -3979,7 +4437,7 @@ _Hang.cuffBtn.MouseButton1Click:Connect(function()
     local cuff = hangFindCuffTool()
     if not cuff then
         pcall(function()
-            game:GetService("StarterGui"):SetCore("SendNotification",{Title="كلبشة",Text="ما عندك كلبشة!",Duration=4})
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title=T18T("كلبشة"),Text=T18T("ما عندك كلبشة!"),Duration=4})
         end)
         return
     end
@@ -4083,7 +4541,7 @@ _Hang.pullBtn.MouseButton1Click:Connect(function()
     local target = findTargetPlayer()
     if not target then
         pcall(function()
-            game:GetService("StarterGui"):SetCore("SendNotification",{Title="سحب",Text="ما لقيت اللاعب، تأكد من الاسم",Duration=4})
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title=T18T("سحب"),Text=T18T("ما لقيت اللاعب، تأكد من الاسم"),Duration=4})
         end)
         return
     end
@@ -4094,7 +4552,7 @@ _Hang.pullBtn.MouseButton1Click:Connect(function()
     local cuff = hangFindCuffTool()
     if not cuff then
         pcall(function()
-            game:GetService("StarterGui"):SetCore("SendNotification",{Title="سحب",Text="ما عندك كلبشة!",Duration=4})
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title=T18T("سحب"),Text=T18T("ما عندك كلبشة!"),Duration=4})
         end)
         return
     end
@@ -4241,13 +4699,27 @@ _Hang.pullBtn.MouseButton1Click:Connect(function()
             end)
         end
     end)
+    task.spawn(function()
+        task.wait(1.5)
+        local _p = game:GetService("UserInputService"):GetMouseLocation()
+        if mouse1click then
+            mouse1click()
+        elseif mouse1press then
+            mouse1press() task.wait(0.05) mouse1release()
+        else
+            local _v = game:GetService("VirtualInputManager")
+            _v:SendMouseButtonEvent(_p.X, _p.Y, 0, true,  game, 1)
+            task.wait(0.05)
+            _v:SendMouseButtonEvent(_p.X, _p.Y, 0, false, game, 1)
+        end
+    end)
 end)
 
 _Hang.freezeBtn.MouseButton1Click:Connect(function()
     local target = findTargetPlayer()
     if not target then
         pcall(function()
-            game:GetService("StarterGui"):SetCore("SendNotification",{Title="تجميد",Text="ما لقيت اللاعب، تأكد من الاسم",Duration=4})
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title=T18T("تجميد"),Text=T18T("ما لقيت اللاعب، تأكد من الاسم"),Duration=4})
         end)
         return
     end
@@ -4258,7 +4730,7 @@ _Hang.freezeBtn.MouseButton1Click:Connect(function()
     local cuff = hangFindCuffTool()
     if not cuff then
         pcall(function()
-            game:GetService("StarterGui"):SetCore("SendNotification",{Title="تجميد",Text="ما عندك كلبشة!",Duration=4})
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title=T18T("تجميد"),Text=T18T("ما عندك كلبشة!"),Duration=4})
         end)
         return
     end
@@ -4375,15 +4847,15 @@ HangAutoBtn.MouseButton1Click:Connect(function()
     local target = findTargetPlayer()
     if not target then
         pcall(function()
-            game:GetService("StarterGui"):SetCore("SendNotification",{Title="تعليق",Text="ما لقيت اللاعب، تأكد من الاسم",Duration=4})
+            game:GetService("StarterGui"):SetCore("SendNotification",{Title=T18T("تعليق"),Text=T18T("ما لقيت اللاعب، تأكد من الاسم"),Duration=4})
         end)
         return
     end
-    setButtonState(HangAutoBtn, true, "جاري التعليق...", "تعليق", Theme.Danger, Theme.PanelSoft)
+    setButtonState(HangAutoBtn, true, T18T("جاري التعليق..."), T18T("تعليق"), Theme.Danger, Theme.PanelSoft)
     doHangAuto(target)
     task.spawn(function()
         while _Hang.running do task.wait(0.3) end
-        setButtonState(HangAutoBtn, false, "جاري التعليق...", "تعليق", Theme.Danger, Theme.PanelSoft)
+        setButtonState(HangAutoBtn, false, T18T("جاري التعليق..."), T18T("تعليق"), Theme.Danger, Theme.PanelSoft)
     end)
 end)
 
@@ -4437,7 +4909,7 @@ local function stopSpectate(keepWarning)
     restoreMyCamera()
     clearSpectateLabels(keepWarning)
     SpectateTarget = nil
-    setButtonState(SpectateBtn, false, "إلغاء المشاهدة", "مشاهدة", Theme.Active, Theme.PanelSoft)
+    setButtonState(SpectateBtn, false, T18T("إلغاء المشاهدة"), T18T("مشاهدة"), Theme.Active, Theme.PanelSoft)
 end
 
 local function createSpectateLabels(target)
@@ -4491,7 +4963,7 @@ local function startSpectate(target)
 
     SpectateActive = true
     SpectateTarget = target
-    setButtonState(SpectateBtn, true, "إلغاء المشاهدة", "مشاهدة", Theme.Active, Theme.PanelSoft)
+    setButtonState(SpectateBtn, true, T18T("إلغاء المشاهدة"), T18T("مشاهدة"), Theme.Active, Theme.PanelSoft)
     createSpectateLabels(target)
 
     if SpectatePlayerRemovingConnection then
@@ -4561,6 +5033,600 @@ SpectateBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- ====== وظائف الميزات الجديدة (داخل IIFE لتجنب تجاوز حد الـ 200 local) ======
+;(function()
+    local NoClipActive = false
+    local NoClipConnection = nil
+    local InfiniteJumpActive = false
+    local InfiniteJumpConnection = nil
+    local WallClimbActive = false
+    local WallClimbConnection = nil
+    local ESPActive = false
+    local ESPConnections = {}
+    local ESPLabels = {}
+
+    local NoClipBtn      = PlayerPage:FindFirstChild("NoClipBtn",      true)
+    local InfiniteJumpBtn = PlayerPage:FindFirstChild("InfiniteJumpBtn", true)
+    local WallClimbBtn   = PlayerPage:FindFirstChild("WallClimbBtn",   true)
+    local ESPBtn         = OthersPage:FindFirstChild("ESPBtn",         true)
+    local LowGravBtn     = OthersPage:FindFirstChild("LowGravBtn",     true)
+
+    local function stopNoClip()
+        NoClipActive = false
+        if NoClipConnection then NoClipConnection:Disconnect(); NoClipConnection = nil end
+        pcall(function()
+            local char = LocalPlayer.Character
+            if char then
+                for _, part in pairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = true end
+                end
+            end
+        end)
+        setButtonState(NoClipBtn, false, T18T("إيقاف اختراق"), T18T("اختراق جدران"), Theme.Active, Theme.ButtonDefault)
+    end
+    local function startNoClip()
+        NoClipActive = true
+        setButtonState(NoClipBtn, true, T18T("إيقاف اختراق"), T18T("اختراق جدران"), Theme.Active, Theme.ButtonDefault)
+        NoClipConnection = RunService.Stepped:Connect(function()
+            if not NoClipActive then return end
+            local char = LocalPlayer.Character
+            if not char then return end
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
+            end
+        end)
+    end
+    if NoClipBtn then
+        NoClipBtn.MouseButton1Click:Connect(function()
+            if NoClipActive then stopNoClip() else startNoClip() end
+        end)
+    end
+    do
+        local LowGravActive = false
+        local origGrav = 196.2
+        if LowGravBtn then
+            LowGravBtn.MouseButton1Click:Connect(function()
+                LowGravActive = not LowGravActive
+                if LowGravActive then
+                    origGrav = workspace.Gravity
+                    workspace.Gravity = origGrav * 0.25
+                    setButtonState(LowGravBtn, true, T18T("إيقاف الجاذبية"), T18T("جاذبية منخفضة"), Theme.Active, Theme.ButtonOrange)
+                else
+                    workspace.Gravity = origGrav
+                    setButtonState(LowGravBtn, false, T18T("إيقاف الجاذبية"), T18T("جاذبية منخفضة"), Theme.Active, Theme.ButtonOrange)
+                end
+            end)
+        end
+    end
+
+    local function stopInfiniteJump()
+        InfiniteJumpActive = false
+        if InfiniteJumpConnection then InfiniteJumpConnection:Disconnect(); InfiniteJumpConnection = nil end
+        setButtonState(InfiniteJumpBtn, false, T18T("إيقاف القفز"), T18T("قفز لا نهائي"), Theme.Active, Theme.ButtonDefault)
+    end
+    local function startInfiniteJump()
+        InfiniteJumpActive = true
+        setButtonState(InfiniteJumpBtn, true, T18T("إيقاف القفز"), T18T("قفز لا نهائي"), Theme.Active, Theme.ButtonDefault)
+        InfiniteJumpConnection = UserInputService.JumpRequest:Connect(function()
+            if not InfiniteJumpActive then return end
+            local char = LocalPlayer.Character
+            if not char then return end
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+        end)
+    end
+    if InfiniteJumpBtn then
+        InfiniteJumpBtn.MouseButton1Click:Connect(function()
+            if InfiniteJumpActive then stopInfiniteJump() else startInfiniteJump() end
+        end)
+    end
+
+    local function stopWallClimb()
+        WallClimbActive = false
+        if WallClimbConnection then WallClimbConnection:Disconnect(); WallClimbConnection = nil end
+        setButtonState(WallClimbBtn, false, T18T("إيقاف التسلق"), T18T("تسلق الجدران"), Theme.Active, Theme.ButtonDefault)
+    end
+    local function startWallClimb()
+        WallClimbActive = true
+        setButtonState(WallClimbBtn, true, T18T("إيقاف التسلق"), T18T("تسلق الجدران"), Theme.Active, Theme.ButtonDefault)
+        WallClimbConnection = RunService.Heartbeat:Connect(function()
+            if not WallClimbActive then return end
+            local char = LocalPlayer.Character
+            if not char then return end
+            local root = char:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+            local rp = RaycastParams.new()
+            rp.FilterDescendantsInstances = {char}
+            rp.FilterType = Enum.RaycastFilterType.Exclude
+            local hit = workspace:Raycast(root.Position, root.CFrame.LookVector * 2.5, rp)
+            if hit then
+                root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, 40, root.AssemblyLinearVelocity.Z)
+            end
+        end)
+    end
+    if WallClimbBtn then
+        WallClimbBtn.MouseButton1Click:Connect(function()
+            if WallClimbActive then stopWallClimb() else startWallClimb() end
+        end)
+    end
+
+    -- ══════ زر الاختفاء ══════
+    local VanishBtn = PlayerPage:FindFirstChild("VanishBtn", true)
+    if VanishBtn then
+        VanishActive = false
+
+        local _VanishRealCF = nil
+        local _VanishHbConn = nil
+
+        local function stopVanish()
+            VanishActive = false
+            if _VanishHbConn then _VanishHbConn:Disconnect(); _VanishHbConn = nil end
+            pcall(function() RunService:UnbindFromRenderStep("_T18VanishRestore") end)
+            setButtonState(VanishBtn, false, T18T("إيقاف الاختفاء"), T18T("اختفاء"), Theme.Active, Theme.ButtonBlue)
+            pcall(function()
+                local char = LocalPlayer.Character
+                if not char then return end
+                if _VanishRealCF then
+                    local root = char:FindFirstChild("HumanoidRootPart")
+                    if root then root.CFrame = _VanishRealCF end
+                end
+                for _, p in ipairs(char:GetDescendants()) do
+                    if p:IsA("BasePart") then p.LocalTransparencyModifier = 0 end
+                end
+            end)
+        end
+
+        local function startVanish()
+            pcall(function()
+                local char = LocalPlayer.Character
+                if not char then return end
+                local root = char:FindFirstChild("HumanoidRootPart")
+                if not root then return end
+
+                -- شفافية الشخصية (تشوف نفسك شبه شفاف)
+                for _, p in ipairs(char:GetDescendants()) do
+                    if p:IsA("BasePart") then p.LocalTransparencyModifier = 0.6 end
+                end
+
+                -- حفظ الموضع الحالي فوراً عند الضغط (قبل أي اتصال يشتغل)
+                _VanishRealCF = root.CFrame
+
+                VanishActive = true
+                setButtonState(VanishBtn, true, T18T("إيقاف الاختفاء"), T18T("اختفاء"), Theme.Active, Theme.ButtonBlue)
+
+                -- Heartbeat (بعد الفيزياء): نحفظ موضعك الحقيقي ثم نبعث 99999999 للسيرفر
+                _VanishHbConn = RunService.Heartbeat:Connect(function()
+                    if not VanishActive then return end
+                    pcall(function()
+                        local c = LocalPlayer.Character
+                        if not c then return end
+                        local r = c:FindFirstChild("HumanoidRootPart")
+                        if r then
+                            _VanishRealCF = r.CFrame
+                            r.CFrame = CFrame.new(99999999, 0, 99999999)
+                        end
+                    end)
+                end)
+
+                -- BindToRenderStep بأولوية قبل الكاميرا: نرجّع موضعك الحقيقي
+                -- الكاميرا تشوف موضعك الحقيقي دائماً — بدون أي رجة أو انتقال
+                RunService:BindToRenderStep("_T18VanishRestore",
+                    Enum.RenderPriority.Camera.Value - 1,
+                    function()
+                        if not VanishActive or not _VanishRealCF then return end
+                        pcall(function()
+                            local c = LocalPlayer.Character
+                            if not c then return end
+                            local r = c:FindFirstChild("HumanoidRootPart")
+                            if r then r.CFrame = _VanishRealCF end
+                        end)
+                    end
+                )
+            end)
+        end
+
+        VanishBtn.MouseButton1Click:Connect(function()
+            if VanishActive then stopVanish() else startVanish() end
+        end)
+    end
+    -- ══════════════════════════
+
+    local function stopESP()
+        ESPActive = false
+        for _, label in pairs(ESPLabels) do pcall(function() label:Destroy() end) end
+        ESPLabels = {}
+        for _, conn in pairs(ESPConnections) do pcall(function() conn:Disconnect() end) end
+        ESPConnections = {}
+        setButtonState(ESPBtn, false, T18T("إيقاف ESP"), "ESP", Theme.Active, Theme.ButtonDefault)
+    end
+    local function startESP()
+        ESPActive = true
+        setButtonState(ESPBtn, true, T18T("إيقاف ESP"), "ESP", Theme.Active, Theme.ButtonDefault)
+        local function addESPLabel(player)
+            if player == LocalPlayer then return end
+            local bb = Instance.new("BillboardGui")
+            bb.Name = "ESP_" .. player.Name
+            bb.Size = UDim2.new(0, 100, 0, 30)
+            bb.StudsOffset = Vector3.new(0, 3, 0)
+            bb.AlwaysOnTop = true
+            local lbl = Instance.new("TextLabel")
+            lbl.Size = UDim2.new(1, 0, 1, 0)
+            lbl.BackgroundTransparency = 1
+            lbl.Text = player.Name
+            lbl.TextColor3 = Color3.fromRGB(255, 80, 80)
+            lbl.Font = Enum.Font.GothamBold
+            lbl.TextSize = 14
+            lbl.TextStrokeTransparency = 0.5
+            lbl.Parent = bb
+            table.insert(ESPConnections, player.CharacterAdded:Connect(function(char)
+                local hrp = char:WaitForChild("HumanoidRootPart", 5)
+                if hrp then bb.Parent = hrp end
+            end))
+            ESPLabels[player.Name] = bb
+            local char = player.Character
+            if char then
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                if hrp then bb.Parent = hrp end
+            end
+        end
+        for _, p in ipairs(Players:GetPlayers()) do addESPLabel(p) end
+        table.insert(ESPConnections, Players.PlayerAdded:Connect(addESPLabel))
+        table.insert(ESPConnections, Players.PlayerRemoving:Connect(function(p)
+            if ESPLabels[p.Name] then pcall(function() ESPLabels[p.Name]:Destroy() end); ESPLabels[p.Name] = nil end
+        end))
+    end
+    if ESPBtn then
+        ESPBtn.MouseButton1Click:Connect(function()
+            if ESPActive then stopESP() else startESP() end
+        end)
+    end
+end)()
+-- ====== نهاية وظائف الميزات الجديدة ======
+
+;(function()
+    -- ====== Anti Lag ======
+    local AntiLagActive = false
+    local AntiLagBtn2 = OthersPage:FindFirstChild("AntiLagBtn", true)
+
+    local function applyAntiLag()
+        pcall(function()
+            local ls = game:GetService("Lighting")
+            ls.GlobalShadows = false
+            ls.FogEnd = 1e6
+            ls.Brightness = 1
+        end)
+        pcall(function()
+            settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        end)
+        pcall(function()
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
+                    v.Enabled = false
+                end
+            end
+        end)
+    end
+
+    local function removeAntiLag()
+        pcall(function()
+            local ls = game:GetService("Lighting")
+            ls.GlobalShadows = true
+        end)
+        pcall(function()
+            settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic
+        end)
+        pcall(function()
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
+                    v.Enabled = true
+                end
+            end
+        end)
+    end
+
+    if AntiLagBtn2 then
+        AntiLagBtn2.MouseButton1Click:Connect(function()
+            AntiLagActive = not AntiLagActive
+            if AntiLagActive then
+                setButtonState(AntiLagBtn2, true, T18T("إيقاف مضاد لاج"), T18T("مضاد لاج"), Theme.Active, Theme.ButtonDefault)
+                applyAntiLag()
+            else
+                setButtonState(AntiLagBtn2, false, T18T("إيقاف مضاد لاج"), T18T("مضاد لاج"), Theme.Active, Theme.ButtonDefault)
+                removeAntiLag()
+            end
+        end)
+    end
+
+    -- ====== FPS / Ping Counter ======
+    local FPSPingActive = false
+    local FPSPingConnection = nil
+    local FPSPingGui = nil
+    local FPSPingBtn2 = OthersPage:FindFirstChild("FPSPingBtn", true)
+
+    local function stopFPSPing()
+        FPSPingActive = false
+        if FPSPingConnection then FPSPingConnection:Disconnect(); FPSPingConnection = nil end
+        if FPSPingGui then FPSPingGui:Destroy(); FPSPingGui = nil end
+        setButtonState(FPSPingBtn2, false, T18T("إيقاف FPS/Ping"), "FPS / Ping", Theme.Active, Theme.ButtonDefault)
+    end
+
+    local function startFPSPing()
+        FPSPingActive = true
+        setButtonState(FPSPingBtn2, true, T18T("إيقاف FPS/Ping"), "FPS / Ping", Theme.Active, Theme.ButtonDefault)
+        local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+        local sg = Instance.new("ScreenGui")
+        sg.Name = "T18FPSPing"
+        sg.ResetOnSpawn = false
+        sg.IgnoreGuiInset = true
+        sg.Parent = playerGui
+        FPSPingGui = sg
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(0, 130, 0, 52)
+        frame.Position = UDim2.new(1, -140, 0, 8)
+        frame.BackgroundColor3 = Color3.fromRGB(8, 10, 24)
+        frame.BackgroundTransparency = 0.18
+        frame.BorderSizePixel = 0
+        frame.Parent = sg
+        local cr = Instance.new("UICorner"); cr.CornerRadius = UDim.new(0, 10); cr.Parent = frame
+        local sk = Instance.new("UIStroke"); sk.Color = Theme.Accent; sk.Thickness = 1; sk.Transparency = 0.4; sk.Parent = frame
+        local fpsLbl = Instance.new("TextLabel")
+        fpsLbl.Size = UDim2.new(1, -12, 0, 24)
+        fpsLbl.Position = UDim2.new(0, 6, 0, 2)
+        fpsLbl.BackgroundTransparency = 1
+        fpsLbl.Text = "FPS: --"
+        fpsLbl.TextColor3 = Color3.fromRGB(100, 220, 100)
+        fpsLbl.Font = Enum.Font.GothamBold
+        fpsLbl.TextSize = 15
+        fpsLbl.TextXAlignment = Enum.TextXAlignment.Left
+        fpsLbl.Parent = frame
+        local pingLbl = Instance.new("TextLabel")
+        pingLbl.Size = UDim2.new(1, -12, 0, 24)
+        pingLbl.Position = UDim2.new(0, 6, 0, 26)
+        pingLbl.BackgroundTransparency = 1
+        pingLbl.Text = "Ping: --"
+        pingLbl.TextColor3 = Color3.fromRGB(100, 180, 255)
+        pingLbl.Font = Enum.Font.GothamBold
+        pingLbl.TextSize = 15
+        pingLbl.TextXAlignment = Enum.TextXAlignment.Left
+        pingLbl.Parent = frame
+        local fpsCount, elapsed = 0, 0
+        FPSPingConnection = RunService.RenderStepped:Connect(function(dt)
+            if not FPSPingActive then return end
+            fpsCount = fpsCount + 1
+            elapsed = elapsed + dt
+            if elapsed >= 0.5 then
+                local fps = math.round(fpsCount / elapsed)
+                local ping = 0
+                pcall(function()
+                    ping = math.round(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
+                end)
+                fpsLbl.Text = "FPS: " .. tostring(fps)
+                pingLbl.Text = "Ping: " .. tostring(ping) .. " ms"
+                if fps >= 55 then
+                    fpsLbl.TextColor3 = Color3.fromRGB(100, 220, 100)
+                elseif fps >= 30 then
+                    fpsLbl.TextColor3 = Color3.fromRGB(255, 200, 50)
+                else
+                    fpsLbl.TextColor3 = Color3.fromRGB(255, 80, 80)
+                end
+                fpsCount = 0
+                elapsed = 0
+            end
+        end)
+    end
+
+    if FPSPingBtn2 then
+        FPSPingBtn2.MouseButton1Click:Connect(function()
+            if FPSPingActive then stopFPSPing() else startFPSPing() end
+        end)
+    end
+
+    -- ====== Server Info ======
+    local ServerInfoBtn2 = OthersPage:FindFirstChild("ServerInfoBtn", true)
+    local ServerInfoGui = nil
+
+    local function closeServerInfo()
+        if ServerInfoGui then ServerInfoGui:Destroy(); ServerInfoGui = nil end
+    end
+
+    if ServerInfoBtn2 then
+        ServerInfoBtn2.MouseButton1Click:Connect(function()
+            if ServerInfoGui then closeServerInfo(); return end
+            local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+            local sg = Instance.new("ScreenGui")
+            sg.Name = "T18ServerInfo"
+            sg.ResetOnSpawn = false
+            sg.IgnoreGuiInset = true
+            sg.Parent = playerGui
+            ServerInfoGui = sg
+
+            local panel = Instance.new("Frame")
+            panel.Size = UDim2.new(0, 280, 0, 240)
+            panel.Position = UDim2.new(0.5, -140, 0.5, -120)
+            panel.BackgroundColor3 = Color3.fromRGB(8, 10, 24)
+            panel.BackgroundTransparency = 0.08
+            panel.BorderSizePixel = 0
+            panel.Parent = sg
+            local pc = Instance.new("UICorner"); pc.CornerRadius = UDim.new(0, 14); pc.Parent = panel
+            local ps = Instance.new("UIStroke"); ps.Color = Theme.Accent; ps.Thickness = 1.5; ps.Transparency = 0.3; ps.Parent = panel
+
+            local titleLbl = Instance.new("TextLabel")
+            titleLbl.Size = UDim2.new(1, -50, 0, 28)
+            titleLbl.Position = UDim2.new(0, 10, 0, 6)
+            titleLbl.BackgroundTransparency = 1
+            titleLbl.Text = "معلومات السيرفر"
+            titleLbl.TextColor3 = Theme.Accent
+            titleLbl.Font = Enum.Font.GothamBold
+            titleLbl.TextSize = 17
+            titleLbl.TextXAlignment = Enum.TextXAlignment.Right
+            titleLbl.Parent = panel
+
+            local function addRow(label, value, yPos)
+                local lbl = Instance.new("TextLabel")
+                lbl.Size = UDim2.new(1, -20, 0, 28)
+                lbl.Position = UDim2.new(0, 10, 0, yPos)
+                lbl.BackgroundTransparency = 1
+                lbl.Text = label .. ": " .. tostring(value)
+                lbl.TextColor3 = Theme.Text
+                lbl.Font = Enum.Font.Gotham
+                lbl.TextSize = 14
+                lbl.TextXAlignment = Enum.TextXAlignment.Right
+                lbl.TextWrapped = true
+                lbl.Parent = panel
+            end
+
+            addRow("عدد اللاعبين", #game:GetService("Players"):GetPlayers(), 38)
+            addRow("الحد الاقصى للاعبين", game:GetService("Players").MaxPlayers, 68)
+            addRow("Place ID", tostring(game.PlaceId), 98)
+            addRow("Game ID", tostring(game.GameId), 128)
+            addRow("Job ID", tostring(game.JobId):sub(1, 18) .. "...", 158)
+
+            -- مدة السيرفر المقدّرة
+            panel.Size = UDim2.new(0, 280, 0, 290)
+            local uptimeLbl = Instance.new("TextLabel")
+            uptimeLbl.Size = UDim2.new(1, -20, 0, 28)
+            uptimeLbl.Position = UDim2.new(0, 10, 0, 188)
+            uptimeLbl.BackgroundTransparency = 1
+            uptimeLbl.TextColor3 = Theme.Text
+            uptimeLbl.Font = Enum.Font.Gotham
+            uptimeLbl.TextSize = 14
+            uptimeLbl.TextXAlignment = Enum.TextXAlignment.Right
+            uptimeLbl.TextWrapped = true
+            uptimeLbl.Text = "عمر السيرفر: جاري التحقق..."
+            uptimeLbl.Parent = panel
+
+            -- label ثاني يوضح المصدر (مقدّر / من الكود)
+            local uptimeSrcLbl = Instance.new("TextLabel")
+            uptimeSrcLbl.Size = UDim2.new(1, -20, 0, 22)
+            uptimeSrcLbl.Position = UDim2.new(0, 10, 0, 216)
+            uptimeSrcLbl.BackgroundTransparency = 1
+            uptimeSrcLbl.TextColor3 = Color3.fromRGB(160, 160, 160)
+            uptimeSrcLbl.Font = Enum.Font.Gotham
+            uptimeSrcLbl.TextSize = 11
+            uptimeSrcLbl.TextXAlignment = Enum.TextXAlignment.Right
+            uptimeSrcLbl.TextWrapped = true
+            uptimeSrcLbl.Text = ""
+            uptimeSrcLbl.Parent = panel
+
+            local function fmtUptime(secs)
+                local h = math.floor(secs / 3600)
+                local m = math.floor((secs % 3600) / 60)
+                local s = math.floor(secs % 60)
+                if h > 0 then
+                    return string.format("%d س %02d د %02d ث", h, m, s)
+                end
+                return string.format("%d د %02d ث", m, s)
+            end
+
+            -- ─── استعلام Presence API لتقدير عمر السيرفر ───
+            -- نجمع UserIds لكل اللاعبين الحاليين
+            _T18EstimatedAge = nil
+            _T18AgeSource    = "script"
+            task.spawn(function()
+                local _t18pls = Players:GetPlayers()
+                local _t18ids = {}
+                for _, _t18p in ipairs(_t18pls) do
+                    table.insert(_t18ids, _t18p.UserId)
+                end
+                if #_t18ids == 0 then
+                    _T18EstimatedAge = _T18ServerUptime()
+                    _T18AgeSource = "script"
+                    return
+                end
+                -- نستعلم Roblox Presence API
+                local _t18res = t18_httpRequest({
+                    Url    = "https://presence.roblox.com/v1/presence/users",
+                    Method = "POST",
+                    Headers = {
+                        ["Content-Type"] = "application/json",
+                        ["Accept"]       = "application/json",
+                    },
+                    Body = t18_jsonEncode({ userIds = _t18ids }),
+                })
+                if not _t18res then
+                    _T18EstimatedAge = _T18ServerUptime()
+                    _T18AgeSource = "script"
+                    return
+                end
+                local _t18body = _t18res.Body or _t18res.body or ""
+                local _t18data = t18_jsonDecode(_t18body)
+                if not _t18data or type(_t18data.userPresences) ~= "table" then
+                    _T18EstimatedAge = _T18ServerUptime()
+                    _T18AgeSource = "script"
+                    return
+                end
+                local _t18jid  = tostring(game.JobId)
+                local _t18now  = os.time()
+                local _t18best = 0      -- أقصى فرق زمني وجدناه (= أقدم نشاط)
+                for _, _t18pr in ipairs(_t18data.userPresences) do
+                    local _t18gid = tostring(_t18pr.gameId or "")
+                    if _t18gid == _t18jid and _t18pr.lastOnline then
+                        -- نحوّل ISO 8601 → Unix timestamp
+                        local _t18lo = tostring(_t18pr.lastOnline)
+                        local _t18y, _t18mo, _t18d, _t18h, _t18mi, _t18s =
+                            _t18lo:match("(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)")
+                        if _t18y then
+                            local _t18ts = os.time({
+                                year  = tonumber(_t18y),
+                                month = tonumber(_t18mo),
+                                day   = tonumber(_t18d),
+                                hour  = tonumber(_t18h),
+                                min   = tonumber(_t18mi),
+                                sec   = tonumber(_t18s),
+                            })
+                            local _t18diff = _t18now - _t18ts
+                            if _t18diff > _t18best then
+                                _t18best = _t18diff
+                            end
+                        end
+                    end
+                end
+                -- نختار الأكبر بين تقدير Presence وتقدير الكود
+                local _t18script = _T18ServerUptime()
+                if _t18best > _t18script then
+                    _T18EstimatedAge = _t18best
+                    _T18AgeSource = "presence"
+                else
+                    _T18EstimatedAge = _t18script
+                    _T18AgeSource = "script"
+                end
+            end)
+
+            local uptimeConn
+            local function refreshUptime()
+                local secs = _T18EstimatedAge or _T18ServerUptime()
+                uptimeLbl.Text = "عمر السيرفر: " .. fmtUptime(secs)
+                if _T18AgeSource == "presence" then
+                    uptimeSrcLbl.Text = "( مقدّر عن طريق أقدم لاعب في السيرفر )"
+                elseif _T18AgeSource == "script" then
+                    uptimeSrcLbl.Text = "( من وقت تشغيل السكربت )"
+                else
+                    uptimeSrcLbl.Text = "( جاري التحقق... )"
+                end
+            end
+            refreshUptime()
+            uptimeConn = RunService.Heartbeat:Connect(function()
+                if not ServerInfoGui then uptimeConn:Disconnect(); return end
+                refreshUptime()
+            end)
+
+            local closeBtn = Instance.new("TextButton")
+            closeBtn.Size = UDim2.new(0, 30, 0, 30)
+            closeBtn.Position = UDim2.new(0, 6, 0, 6)
+            closeBtn.BackgroundColor3 = Theme.Danger
+            closeBtn.BackgroundTransparency = 0.2
+            closeBtn.Text = "X"
+            closeBtn.TextColor3 = Theme.Text
+            closeBtn.Font = Enum.Font.GothamBold
+            closeBtn.TextSize = 14
+            closeBtn.AutoButtonColor = false
+            closeBtn.Parent = panel
+            local cc = Instance.new("UICorner"); cc.CornerRadius = UDim.new(0, 8); cc.Parent = closeBtn
+            closeBtn.MouseButton1Click:Connect(closeServerInfo)
+        end)
+    end
+end)()
+
 LocalPlayer.CharacterAdded:Connect(function()
     if SpectateActive then
         stopSpectate()
@@ -4587,4 +5653,224 @@ LocalPlayer.CharacterAdded:Connect(function()
         task.wait(0.5)
         _G._HLBtn:Activate()
     end
+
 end)
+
+-- ═══════════════════════════════════════════════════════
+--  نظام اللغة / Language System — T18 BangGuiPro
+--  ⚠ NO local keywords — all globals to stay under 200 register limit
+-- ═══════════════════════════════════════════════════════
+
+_T18TR = {
+    -- ── Sidebar ──────────────────────────────────────
+    ["القوائم"]                                   = "Menus",
+    ["اختر القسم"]                                = "Choose Section",
+    -- ── Menu buttons ─────────────────────────────────
+    ["اللاعب"]                                    = "Player",
+    ["استهداف"]                                   = "Target",
+    ["مهم"]                                       = "Important",
+    ["اونر"]                                      = "Owner",
+    ["اخرى"]                                      = "Others",
+    ["اللغة"]                                     = "Language",
+    -- ── Page titles / subtitles ───────────────────────
+    ["القائمة الرئيسية"]                          = "Main Menu",
+    ["ميزات إضافية"]                              = "Extra Features",
+    ["أوامر الحركة والسرعة"]                      = "Movement & Speed",
+    ["أوامر التعامل مع اللاعبين"]                 = "Player Interaction",
+    ["رسالة داخل السكربت"]                        = "Script Message",
+    ["أوامر الإدارة الخاصة"]                      = "Admin Commands",
+    ["ملاحظة مهمة : يا اخوان حماية البانق ما تشتغل الا على سكربت V.R.7"] =
+        "Important Note: Bang Protection only works on script V.R.7",
+    -- ── Buttons ──────────────────────────────────────
+    ["بانق"]                                      = "Bang",
+    ["ريسيت"]                                     = "Reset",
+    ["حماية بانق"]                                = "Bang Protect",
+    ["فلنق"]                                      = "Fling",
+    ["طيران"]                                     = "Fly",
+    ["سرعة اللاعب"]                               = "Walk Speed",
+    ["مشية زومبي"]                                = "Zombie Walk",
+    ["هيدلس"]                                     = "Headless",
+    ["تنقل"]                                      = "Teleport",
+    ["مشاهدة"]                                    = "Spectate",
+    ["حفظ مكاني"]                                 = "Save Pos",
+    ["تعليق"]                                     = "Hang",
+    ["تجميد"]                                     = "Freeze",
+    ["كلبش"]                                      = "Cuff",
+    ["سحب"]                                       = "Pull",
+    ["طرد"]                                       = "Kick",
+    ["استدعاء"]                                   = "Summon",
+    ["إرسال"]                                     = "Send",
+    ["نسخ رابط الدسكورد"]                         = "Copy Discord",
+    -- ── Dynamic button states ─────────────────────────
+    ["إيقاف هيدلس"]                               = "Stop Headless",
+    ["إيقاف الفلنق"]                              = "Stop Fling",
+    ["إيقاف"]                                     = "Stop",
+    ["إيقاف الطيران"]                             = "Stop Fly",
+    ["جاري التعليق..."]                            = "Hanging...",
+    ["إلغاء المشاهدة"]                            = "Stop Spectate",
+    ["فك التجميد"]                                = "Unfreeze",
+    ["إيقاف الاستدعاء"]                           = "Stop Summon",
+    -- ── Input placeholders ───────────────────────────
+    ["اكتب اسم اللاعب هنا"]                       = "Enter player name",
+    ["سرعة الطيران"]                              = "Fly speed",
+    ["سرعة المشي"]                                = "Walk speed",
+    ["اكتب رسالة..."]                              = "Type a message...",
+    ["اكتب 4 أحرف من يوزر اللاعب"]               = "Enter 4 chars of username",
+    -- ── Labels ───────────────────────────────────────
+    ["التحكم الرئيسي"]                            = "Main Controls",
+    ["شات"]                                       = "Chat",
+    ["تواصل بين مشغلي السكربت"]                   = "Script users chat",
+    ["─── مستخدمين السكربت ───"]                   = "─── Script Users ───",
+    ["العدد: "]                                   = "Count: ",
+    -- ── Owner section ────────────────────────────────
+    ["اكتب 4 أحرف على الأقل"]                    = "Enter at least 4 chars",
+    ["لا يوجد لاعب مطابق"]                        = "No matching player",
+    ["تم تحديد: "]                                = "Selected: ",
+    -- ── Notifications ────────────────────────────────
+    ["ما عندك كلبشة!"]                            = "You don't have a cuff!",
+    ["تم التعليق!"]                               = "Hung successfully!",
+    ["فشلت الكلبشة، حاول مجدداً"]                 = "Cuff failed, try again",
+    ["ما لقيت اللاعب، تأكد من الاسم"]             = "Player not found, check name",
+    ["كلبشة"]                                     = "Cuff",
+    ["تم استدعاؤك بواسطة الأونر"]                 = "Summoned by Owner",
+    ["انتهى الاستدعاء"]                           = "Summon ended",
+    ["اكتب 4 أحرف من يوزر اللاعب أو أكثر"]       = "Enter at least 4 chars",
+    ["ما قدرت أرسل الأمر — تأكد إن المُشغِّل يدعم HTTP"] =
+        "Couldn't send command — check executor HTTP",
+    ["تم نسخ رابط الدسكورد"]                      = "Discord link copied",
+    ["تم إيقاف الاستدعاء"]                        = "Summon stopped",
+    ["اكتب يوزر اللاعب في خانة الكتابة"]          = "Enter player username in the box",
+    ["أدخل الـ Prefix الخاص بك"]                  = "Enter your Prefix",
+    ["تم إيقاف النسخ"]                            = "Copy stopped",
+    ["اللاعب خرج من السيرفر"]                      = "Player left the server",
+    ["تم تفعيل النسخ على "]                        = "Copy activated on ",
+    ["تم تفعيل الاستدعاء لـ "]                     = "Summon activated for ",
+    ["النظام"]                                    = "System",
+    ["ما قدرت أرسل الرسالة — تأكد إن المُشغِّل يدعم HTTP"] =
+        "Couldn't send message — check executor HTTP",
+    ["مرحبًا! هذي شاشة شات خاصة بمشغّلي السكربت فقط — تمر عبر سيرفر خارجي ولا تظهر لأي لاعب ما يستخدم السكربت."] =
+        "Hello! This is a private chat for script users only — routed through an external server and not visible to other players.",
+    -- ── Others section buttons ──────────────────────────────
+    ["مضاد افك"]                                     = "Anti AFK",
+    ["حماية كلبشة"]                                  = "Cuff Protect",
+    ["جاذبية منخفضة"]                                = "Low Gravity",
+    ["مضاد لاج"]                                     = "Anti Lag",
+    ["معلومات السيرفر"]                              = "Server Info",
+    ["اختراق جدران"]                                 = "Noclip",
+    ["قفز لا نهائي"]                                 = "Infinite Jump",
+    ["تسلق الجدران"]                                 = "Wall Climb",
+    -- ── Others section dynamic states ────────────────────
+    ["إيقاف مشية زومبي"]                             = "Stop Zombie Walk",
+    ["إيقاف الحماية"]                                = "Stop Protection",
+    ["إيقاف اختراق"]                                 = "Stop Noclip",
+    ["إيقاف الجاذبية"]                               = "Stop Low Grav",
+    ["إيقاف القفز"]                                  = "Stop Inf Jump",
+    ["إيقاف التسلق"]                                 = "Stop Wall Climb",
+    ["اختفاء"]                                       = "Vanish",
+    ["إيقاف الاختفاء"]                               = "Stop Vanish",
+    ["إيقاف ESP"]                                    = "Stop ESP",
+    ["إيقاف مضاد لاج"]                               = "Stop Anti Lag",
+    ["إيقاف مضاد افك"]                               = "Stop Anti AFK",
+    ["عمر السيرفر: "]                                = "Server Age: ",
+    -- ── Extra missing translations ────────────────────────
+    ["اوامر شاليه محمد"]                             = "Shale's Commands",
+    ["تفعيل نسخ"]                                    = "Enable Copy",
+    ["ايقاف النسخ"]                                  = "Stop Copy",
+    ["Prefix الـ HD (تلقائي أو يدوي)"]               = "HD Prefix (Auto or Manual)",
+    ["مثال: ,"]                                      = "Example: ,",
+    ["عندك مشكلة؟ تواصل دس"]                         = "Got a problem? Contact us",
+    ["شاركونا اقتراحاتكم على الدسكورد"]              = "Share feedback on Discord",
+    ["شاركونا اقتراحاتكم على الدسكورد | اضغط الزر الصغير لإخفاء النافذة"] =
+        "Share feedback on Discord | Press the small button to hide",
+    ["إيقاف Respawn Loop"]                            = "Stop Respawn Loop",
+    -- ── Button states missing translations ───────────────
+    ["السرعة مفعلة"]                                  = "Speed Active",
+    ["الحماية شغالة"]                                 = "Protect Active",
+    ["رجوع للمكان"]                                   = "Return to Pos",
+    ["إيقاف FPS/Ping"]                                = "Stop FPS/Ping",
+}
+
+-- build reverse table (EN → AR)
+_T18Rev = {}
+for _t18k, _t18v in pairs(_T18TR) do _T18Rev[_t18v] = _t18k end
+
+-- redefine T18T now that the real tables exist
+function T18T(s)
+    if _T18Lang == "en" then return _T18TR[s] or s end
+    return _T18Rev[s] or s
+end
+
+-- GUI walker
+function T18ApplyLang(toLang)
+    _T18Lang = toLang
+    _T18SG = nil
+    pcall(function() _T18SG = game:GetService("CoreGui"):FindFirstChild("BangGuiPro") end)
+    if not _T18SG then
+        pcall(function() _T18SG = LocalPlayer.PlayerGui:FindFirstChild("BangGuiPro") end)
+    end
+    if not _T18SG then return end
+    _T18Lookup = (toLang == "en") and _T18TR or _T18Rev
+    for _, _t18v in ipairs(_T18SG:GetDescendants()) do
+        pcall(function()
+            if _t18v:IsA("TextLabel") or _t18v:IsA("TextButton") or _t18v:IsA("TextBox") then
+                if _T18Lookup[_t18v.Text] then _t18v.Text = _T18Lookup[_t18v.Text] end
+                if _t18v:IsA("TextBox") and _T18Lookup[_t18v.PlaceholderText] then
+                    _t18v.PlaceholderText = _T18Lookup[_t18v.PlaceholderText]
+                end
+            end
+        end)
+    end
+    -- ── Special: MainText (contains player name — can't use lookup table) ──
+    if _T18MainTextLabel then
+        pcall(function()
+            if toLang == "en" then
+                _T18MainTextLabel.Text = _T18MainTextEn
+            else
+                _T18MainTextLabel.Text = _T18MainTextAr
+            end
+        end)
+    end
+    -- ── Special: ImportantText ──
+    if _T18ImportantTextLabel then
+        pcall(function()
+            if toLang == "en" then
+                _T18ImportantTextLabel.Text = _T18ImportantTextEn
+            else
+                _T18ImportantTextLabel.Text = _T18ImportantTextAr
+            end
+        end)
+    end
+end
+
+
+  -- wire up language buttons after GUI is built
+  if _T18ArBtn and _T18EnBtn then
+      function T18MarkActive(lang)
+          if lang == "ar" then
+              _T18ArBtn.BackgroundColor3 = Color3.fromRGB(30, 100, 200)
+              _T18ArBtn.TextColor3       = Color3.fromRGB(255, 255, 255)
+              _T18EnBtn.BackgroundColor3 = Color3.fromRGB(50, 55, 80)
+              _T18EnBtn.TextColor3       = Color3.fromRGB(180, 185, 210)
+          else
+              _T18EnBtn.BackgroundColor3 = Color3.fromRGB(30, 100, 200)
+              _T18EnBtn.TextColor3       = Color3.fromRGB(255, 255, 255)
+              _T18ArBtn.BackgroundColor3 = Color3.fromRGB(50, 55, 80)
+              _T18ArBtn.TextColor3       = Color3.fromRGB(180, 185, 210)
+          end
+      end
+
+      _T18ArBtn.MouseButton1Click:Connect(function()
+          if _T18Lang == "ar" then return end
+          T18ApplyLang("ar")
+          T18MarkActive("ar")
+      end)
+
+      _T18EnBtn.MouseButton1Click:Connect(function()
+          if _T18Lang == "en" then return end
+          T18ApplyLang("en")
+          T18MarkActive("en")
+      end)
+
+      T18MarkActive("ar")
+  end
+  
