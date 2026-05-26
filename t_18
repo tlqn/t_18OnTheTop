@@ -389,16 +389,16 @@ local Theme = {
     Warning = Color3.fromRGB(245, 158, 11),
     Danger = Color3.fromRGB(190, 52, 78),
     Shadow = Color3.fromRGB(0, 0, 0),
-    ButtonDefault = Color3.fromRGB(20, 20, 20),
-    ButtonDefaultAlt = Color3.fromRGB(30, 30, 30),
-    ButtonBlue = Color3.fromRGB(32, 32, 32),
-    ButtonBlueAlt = Color3.fromRGB(52, 52, 52),
-    ButtonGreen = Color3.fromRGB(22, 44, 28),
-    ButtonGreenAlt = Color3.fromRGB(34, 68, 42),
-    ButtonOrange = Color3.fromRGB(60, 44, 16),
-    ButtonOrangeAlt = Color3.fromRGB(96, 64, 22),
-    ButtonRed = Color3.fromRGB(68, 20, 30),
-    ButtonRedAlt = Color3.fromRGB(130, 36, 54),
+    ButtonDefault = Color3.fromRGB(22, 22, 22),
+    ButtonDefaultAlt = Color3.fromRGB(32, 32, 32),
+    ButtonBlue = Color3.fromRGB(10, 10, 10),
+    ButtonBlueAlt = Color3.fromRGB(32, 32, 32),
+    ButtonGreen = Color3.fromRGB(22, 22, 22),
+    ButtonGreenAlt = Color3.fromRGB(32, 32, 32),
+    ButtonOrange = Color3.fromRGB(22, 22, 22),
+    ButtonOrangeAlt = Color3.fromRGB(32, 32, 32),
+    ButtonRed = Color3.fromRGB(22, 22, 22),
+    ButtonRedAlt = Color3.fromRGB(32, 32, 32),
 }
 
 local function connect(list, signal, callback)
@@ -699,9 +699,9 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "BangGuiPro"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.DisplayOrder = 9999
+ScreenGui.DisplayOrder = 2147483647
 ScreenGui.IgnoreGuiInset = true
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Parent = game:GetService("CoreGui")
 
 function T18RuntimeShutdown()
     pcall(function()
@@ -989,6 +989,23 @@ SectionLabel.Font = Enum.Font.GothamMedium
 SectionLabel.TextSize = 13
 SectionLabel.Parent = ContentPanel
 
+local function applyClickToClear(box)
+    local _ccSaved = ""
+    box.Focused:Connect(function()
+        if box.Text ~= "" then
+            _ccSaved = box.Text
+            box.Text = ""
+        end
+    end)
+    box.FocusLost:Connect(function()
+        if box.Text == "" and _ccSaved ~= "" then
+            box.Text = _ccSaved
+            _ccSaved = ""
+        end
+    end)
+end
+
+
 local Input = Instance.new("TextBox")
 Input.Size = UDim2.new(1, 0, 0, 42)
 Input.Position = UDim2.new(0, 0, 0, 26)
@@ -1004,6 +1021,7 @@ Input.ClearTextOnFocus = false
 Input.Parent = ContentPanel
 makeCorner(Input, 12)
 makeStroke(Input, Theme.Border, 1, 0.2)
+applyClickToClear(Input)
 
 local function makeButton(name, text, size, position, baseColor, accentColor)
     local button = Instance.new("TextButton")
@@ -1051,7 +1069,6 @@ local function makeButton(name, text, size, position, baseColor, accentColor)
 
     return button
 end
-
 local function makeInput(name, placeholder, defaultText, position)
     local box = Instance.new("TextBox")
     box.Name = name
@@ -1069,19 +1086,20 @@ local function makeInput(name, placeholder, defaultText, position)
     box.Parent = ContentPanel
     makeCorner(box, 12)
     makeStroke(box, Theme.Border, 1, 0.2)
+    applyClickToClear(box)
     return box
 end
 
-BangBtn = makeButton("BangBtn", "بانق", UDim2.new(0, 168, 0, 38), UDim2.new(0, 4, 0, 82), Theme.ButtonDefault, Theme.ButtonRed)
-ResetBtn = makeButton("ResetBtn", "ريسيت", UDim2.new(0, 168, 0, 38), UDim2.new(0, 190, 0, 82), Theme.PanelSoft, Theme.PanelSoft)
-FlingBtn = makeButton("FlingBtn", "حماية بانق", UDim2.new(1, -8, 0, 38), UDim2.new(0, 4, 0, 130), Theme.ButtonDefault, Theme.ButtonBlue)
-TargetFlingBtn = makeButton("TargetFlingBtn", "فلنق", UDim2.new(0, 168, 0, 38), UDim2.new(0, 190, 0, 130), Theme.ButtonDefault, Theme.ButtonRed)
-FlyBtn = makeButton("FlyBtn", "طيران", UDim2.new(0, 168, 0, 38), UDim2.new(0, 4, 0, 178), Theme.ButtonDefault, Theme.ButtonBlue)
+BangBtn = makeButton("BangBtn", "بانق", UDim2.new(0, 168, 0, 38), UDim2.new(0, 4, 0, 82), Theme.ButtonBlue, Theme.Accent)
+ResetBtn = makeButton("ResetBtn", "ريسيت", UDim2.new(0, 168, 0, 38), UDim2.new(0, 190, 0, 82), Theme.ButtonBlue, Theme.Accent)
+FlingBtn = makeButton("FlingBtn", "حماية بانق", UDim2.new(1, -8, 0, 38), UDim2.new(0, 4, 0, 130), Theme.ButtonBlue, Theme.Accent)
+TargetFlingBtn = makeButton("TargetFlingBtn", "فلنق", UDim2.new(0, 168, 0, 38), UDim2.new(0, 190, 0, 130), Theme.ButtonBlue, Theme.Accent)
+FlyBtn = makeButton("FlyBtn", "طيران", UDim2.new(0, 168, 0, 38), UDim2.new(0, 4, 0, 178), Theme.ButtonBlue, Theme.Accent)
 SpeedInput = makeInput("SpeedInput", "سرعة الطيران", "50", UDim2.new(0, 190, 0, 178))
-WalkSpeedBtn = makeButton("WalkSpeedBtn", "سرعة اللاعب", UDim2.new(0, 168, 0, 38), UDim2.new(0, 4, 0, 226), Theme.ButtonDefault, Theme.ButtonBlue)
+WalkSpeedBtn = makeButton("WalkSpeedBtn", "سرعة اللاعب", UDim2.new(0, 168, 0, 38), UDim2.new(0, 4, 0, 226), Theme.ButtonBlue, Theme.Accent)
 WalkSpeedInput = makeInput("WalkSpeedInput", "سرعة المشي", "16", UDim2.new(0, 190, 0, 226))
-ZombieWalkBtn = makeButton("ZombieWalkBtn", "مشية زومبي", UDim2.new(1, -8, 0, 38), UDim2.new(0, 4, 0, 274), Theme.ButtonDefault, Theme.ButtonGreen)
-_G._HLBtn = makeButton("HeadlessBtn", "هيدلس", UDim2.new(1, -8, 0, 38), UDim2.new(0, 4, 0, 274), Theme.ButtonDefault, Theme.ButtonGreen)
+ZombieWalkBtn = makeButton("ZombieWalkBtn", "مشية زومبي", UDim2.new(1, -8, 0, 38), UDim2.new(0, 4, 0, 274), Theme.ButtonBlue, Theme.Accent)
+_G._HLBtn = makeButton("HeadlessBtn", "هيدلس", UDim2.new(1, -8, 0, 38), UDim2.new(0, 4, 0, 274), Theme.ButtonBlue, Theme.Accent)
 
 SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Size = UDim2.new(0, 178, 0, 40)
@@ -1095,12 +1113,12 @@ SpeedLabel.TextSize = 15
 SpeedLabel.Parent = ContentPanel
 
 TeleportBtn = makeButton("TeleportBtn", "تنقل", UDim2.new(0, 168, 0, 38), UDim2.new(0, 4, 0, 274), Theme.ButtonBlue, Theme.Accent)
-SpectateBtn = makeButton("SpectateBtn", "مشاهدة", UDim2.new(0, 168, 0, 38), UDim2.new(0, 190, 0, 274), Theme.ButtonDefault, Theme.ButtonGreen)
-SavePlaceBtn  = makeButton("SavePlaceBtn",  "حفظ مكاني", UDim2.new(0, 168, 0, 38), UDim2.new(1, -172, 0, 274), Theme.ButtonDefaultAlt, Theme.ButtonOrange)
-HangAutoBtn   = makeButton("HangAutoBtn",   "تعليق",     UDim2.new(0, 168, 0, 38), UDim2.new(0, 4,    0, 274), Theme.ButtonDefault,    Theme.ButtonRed)
-_Hang.freezeBtn     = makeButton("FreezeOnlyBtn","تجميد",     UDim2.new(0, 168, 0, 38), UDim2.new(0, 4,    0, 274), Theme.ButtonDefault,    Theme.ButtonBlue)
-_Hang.cuffBtn       = makeButton("CuffOnlyBtn",  "كلبش",      UDim2.new(0, 168, 0, 38), UDim2.new(0, 4,    0, 274), Theme.ButtonDefault,    Theme.ButtonGreen)
-_Hang.pullBtn        = makeButton("PullBtn",       "سحب",       UDim2.new(0, 168, 0, 38), UDim2.new(0, 4,    0, 274), Theme.ButtonDefault,    Theme.ButtonOrange)
+SpectateBtn = makeButton("SpectateBtn", "مشاهدة", UDim2.new(0, 168, 0, 38), UDim2.new(0, 190, 0, 274), Theme.ButtonBlue, Theme.Accent)
+SavePlaceBtn  = makeButton("SavePlaceBtn",  "حفظ مكاني", UDim2.new(0, 168, 0, 38), UDim2.new(1, -172, 0, 274), Theme.ButtonBlue, Theme.Accent)
+HangAutoBtn   = makeButton("HangAutoBtn",   "تعليق",     UDim2.new(0, 168, 0, 38), UDim2.new(0, 4,    0, 274), Theme.ButtonBlue, Theme.Accent)
+_Hang.freezeBtn     = makeButton("FreezeOnlyBtn","تجميد",     UDim2.new(0, 168, 0, 38), UDim2.new(0, 4,    0, 274), Theme.ButtonBlue, Theme.Accent)
+_Hang.cuffBtn       = makeButton("CuffOnlyBtn",  "كلبش",      UDim2.new(0, 168, 0, 38), UDim2.new(0, 4,    0, 274), Theme.ButtonBlue, Theme.Accent)
+_Hang.pullBtn        = makeButton("PullBtn",       "سحب",       UDim2.new(0, 168, 0, 38), UDim2.new(0, 4,    0, 274), Theme.ButtonBlue, Theme.Accent)
 
 PanelPadding:Destroy()
 SectionLabel:Destroy()
@@ -1890,6 +1908,7 @@ if isOwnerUser then
     OwnerTargetInput.Parent = OwnerScroll
     makeCorner(OwnerTargetInput, 12)
     makeStroke(OwnerTargetInput, Theme.Border, 1, 0.2)
+    applyClickToClear(OwnerTargetInput)
 
     OwnerTargetHint = Instance.new("TextLabel")
     OwnerTargetHint.Size = UDim2.new(1, -20, 0, 18)
@@ -2621,8 +2640,9 @@ PickerBtn.Name = "PickerBtn"
 PickerBtn.Size = UDim2.new(0, 40, 0, 40)
 PickerBtn.Position = UDim2.new(1, -50, 0, 54)
 PickerBtn.BackgroundColor3 = Theme.ButtonBlue
+local _pi = PickerBtn:FindFirstChild("PickerIcon") if _pi then _pi.Visible = true end
 PickerBtn.BackgroundTransparency = 0.1
-PickerBtn.Text = "+"
+PickerBtn.Text = ""
 PickerBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 PickerBtn.Font = Enum.Font.GothamBold
 PickerBtn.TextSize = 22
@@ -2630,6 +2650,15 @@ PickerBtn.AutoButtonColor = false
 PickerBtn.Parent = TargetPage
 makeCorner(PickerBtn, 10)
 makeStroke(PickerBtn, Theme.Accent, 1, 0.2)
+local _pickerImg = Instance.new("ImageLabel")
+_pickerImg.Name = "PickerIcon"
+_pickerImg.Size = UDim2.new(1, -8, 1, -8)
+_pickerImg.Position = UDim2.new(0, 4, 0, 4)
+_pickerImg.BackgroundTransparency = 1
+_pickerImg.Image = "rbxassetid://91902279498907"
+_pickerImg.ScaleType = Enum.ScaleType.Fit
+_pickerImg.ZIndex = PickerBtn.ZIndex + 1
+_pickerImg.Parent = PickerBtn
 
 local pickerActive = false
 local pickerTool = nil
@@ -2646,7 +2675,8 @@ local function destroyPickerTool()
     pickerMouse = nil
     pickerActive = false
     PickerBtn.BackgroundColor3 = Theme.ButtonBlue
-    PickerBtn.Text = "+"
+    PickerBtn.Text = ""
+    local _pi2 = PickerBtn:FindFirstChild("PickerIcon") if _pi2 then _pi2.Visible = true end
 end
 
 LocalPlayer.CharacterRemoving:Connect(function()
@@ -2668,6 +2698,7 @@ PickerBtn.MouseButton1Click:Connect(function()
     tool.Name = "T18PickerTool"
     tool.RequiresHandle = false
     tool.CanBeDropped = false
+    tool.TextureId = "rbxassetid://91902279498907"
     tool.ManualActivationOnly = false
     tool.ToolTip = ""
 
@@ -2695,6 +2726,7 @@ PickerBtn.MouseButton1Click:Connect(function()
     pickerActive = true
     PickerBtn.BackgroundColor3 = Theme.Danger
     PickerBtn.Text = "X"
+    local _pi = PickerBtn:FindFirstChild("PickerIcon") if _pi then _pi.Visible = false end
     pickerTool = tool
     tool.Parent = LocalPlayer.Backpack
     pcall(function() hum:EquipTool(tool) end)
@@ -2706,7 +2738,7 @@ BangBtn.Position = UDim2.new(0, 10, 0, 100)
 
 ResetBtn.Parent = TargetPage
 ResetBtn.Size = UDim2.new(0.5, -14, 0, 38)
-ResetBtn.Position = UDim2.new(0.5, 4, 0, 100)
+ResetBtn.Position = UDim2.new(0.5, 4, 0, 188)
 
 FlingBtn.Parent = TargetPage
 FlingBtn.Size = UDim2.new(0.5, -14, 0, 38)
@@ -2722,7 +2754,7 @@ TeleportBtn.Position = UDim2.new(0, 10, 0, 188)
 
 SpectateBtn.Parent = TargetPage
 SpectateBtn.Size = UDim2.new(0.5, -14, 0, 38)
-SpectateBtn.Position = UDim2.new(0.5, 4, 0, 188)
+SpectateBtn.Position = UDim2.new(0.5, 4, 0, 100)
 
 
 HangAutoBtn.Parent = TargetPage
@@ -2783,6 +2815,7 @@ HdPrefixInput.ClearTextOnFocus = false
 HdPrefixInput.Parent = TargetPage
 makeCorner(HdPrefixInput, 10)
 makeStroke(HdPrefixInput, Theme.Border, 1, 0.2)
+applyClickToClear(HdPrefixInput)
 
 -- محاولة قراءة الـ prefix تلقائياً من HD Admin
 pcall(function()
@@ -2802,7 +2835,7 @@ pcall(function()
     tryGet("HD_Admin","Settings","Prefix")
 end)
 
-local HdCopyBtn = makeButton("HdCopyBtn", "نسخ HD", UDim2.new(0.6, -14, 0, 38), UDim2.new(0.4, 4, 0, 364), Theme.ButtonDefault, Theme.ButtonGreen)
+local HdCopyBtn = makeButton("HdCopyBtn", "نسخ HD", UDim2.new(0.6, -14, 0, 38), UDim2.new(0.4, 4, 0, 364), Theme.ButtonBlue, Theme.Accent)
 HdCopyBtn.Parent = TargetPage
 
 
@@ -2856,21 +2889,21 @@ _G._HLBtn.Size = UDim2.new(0.5, -14, 0, 38)
 _G._HLBtn.Position = UDim2.new(0.5, 4, 0, 10)
 
 local AntiAFK = {active=false, conn=nil, btn=nil}
-AntiAFK.btn = makeButton("AntiAFKBtn", "مضاد افك", UDim2.new(0.5, -14, 0, 38), UDim2.new(0, 10, 0, 54), Theme.ButtonDefault, Theme.ButtonGreen)
+AntiAFK.btn = makeButton("AntiAFKBtn", "مضاد افك", UDim2.new(0.5, -14, 0, 38), UDim2.new(0, 10, 0, 54), Theme.ButtonBlue, Theme.Accent)
 AntiAFK.btn.Parent = OthersPage
 
-_G.CuffProtectBtn = makeButton("CuffProtectBtn", "حماية كلبشة", UDim2.new(0.5, -14, 0, 38), UDim2.new(0.5, 4, 0, 54), Theme.ButtonDefault, Theme.ButtonOrange)
+_G.CuffProtectBtn = makeButton("CuffProtectBtn", "حماية كلبشة", UDim2.new(0.5, -14, 0, 38), UDim2.new(0.5, 4, 0, 54), Theme.ButtonBlue, Theme.Accent)
 _G.CuffProtectBtn.Parent = OthersPage
 
-do local b = makeButton("NoClipBtn", "اختراق جدران", UDim2.new(0.5, -14, 0, 38), UDim2.new(0, 10, 0, 258), Theme.ButtonDefault, Theme.ButtonBlue); b.Parent = PlayerPage end
-do local b = makeButton("LowGravBtn", "جاذبية منخفضة", UDim2.new(0.5, -14, 0, 38), UDim2.new(0, 10, 0, 98), Theme.ButtonDefault, Theme.ButtonOrange); b.Parent = OthersPage end
-do local b = makeButton("InfiniteJumpBtn", "قفز لا نهائي", UDim2.new(0.5, -14, 0, 38), UDim2.new(0, 10, 0, 214), Theme.ButtonDefault, Theme.ButtonBlue); b.Parent = PlayerPage end
-do local b = makeButton("WallClimbBtn", "تسلق الجدران", UDim2.new(0.5, -14, 0, 38), UDim2.new(0.5, 4, 0, 214), Theme.ButtonDefault, Theme.ButtonGreen); b.Parent = PlayerPage end
-do local b = makeButton("VanishBtn", T18T("اختفاء"), UDim2.new(0.5, -14, 0, 38), UDim2.new(0.5, 4, 0, 258), Theme.ButtonDefault, Theme.ButtonBlue); b.Parent = PlayerPage end
-do local b = makeButton("ESPBtn", "ESP", UDim2.new(0.5, -14, 0, 38), UDim2.new(0.5, 4, 0, 98), Theme.ButtonDefault, Theme.ButtonBlue); b.Parent = OthersPage end
-do local b = makeButton("AntiLagBtn", "مضاد لاج", UDim2.new(0.5, -14, 0, 38), UDim2.new(0, 10, 0, 142), Theme.ButtonDefault, Theme.ButtonOrange); b.Parent = OthersPage end
-do local b = makeButton("FPSPingBtn", "FPS / Ping", UDim2.new(0.5, -14, 0, 38), UDim2.new(0.5, 4, 0, 142), Theme.ButtonDefault, Theme.ButtonBlue); b.Parent = OthersPage end
-do local b = makeButton("ServerInfoBtn", "معلومات السيرفر", UDim2.new(1, -20, 0, 38), UDim2.new(0, 10, 0, 186), Theme.ButtonDefault, Theme.ButtonBlue); b.Parent = OthersPage end
+do local b = makeButton("NoClipBtn", "اختراق جدران", UDim2.new(0.5, -14, 0, 38), UDim2.new(0, 10, 0, 258), Theme.ButtonBlue, Theme.Accent); b.Parent = PlayerPage end
+do local b = makeButton("LowGravBtn", "جاذبية منخفضة", UDim2.new(0.5, -14, 0, 38), UDim2.new(0, 10, 0, 98), Theme.ButtonBlue, Theme.Accent); b.Parent = OthersPage end
+do local b = makeButton("InfiniteJumpBtn", "قفز لا نهائي", UDim2.new(0.5, -14, 0, 38), UDim2.new(0, 10, 0, 214), Theme.ButtonBlue, Theme.Accent); b.Parent = PlayerPage end
+do local b = makeButton("WallClimbBtn", "تسلق الجدران", UDim2.new(0.5, -14, 0, 38), UDim2.new(0.5, 4, 0, 214), Theme.ButtonBlue, Theme.Accent); b.Parent = PlayerPage end
+do local b = makeButton("VanishBtn", T18T("اختفاء"), UDim2.new(0.5, -14, 0, 38), UDim2.new(0.5, 4, 0, 258), Theme.ButtonBlue, Theme.Accent); b.Parent = PlayerPage end
+do local b = makeButton("ESPBtn", "ESP", UDim2.new(0.5, -14, 0, 38), UDim2.new(0.5, 4, 0, 98), Theme.ButtonBlue, Theme.Accent); b.Parent = OthersPage end
+do local b = makeButton("AntiLagBtn", "مضاد لاج", UDim2.new(0.5, -14, 0, 38), UDim2.new(0, 10, 0, 142), Theme.ButtonBlue, Theme.Accent); b.Parent = OthersPage end
+do local b = makeButton("FPSPingBtn", "FPS / Ping", UDim2.new(0.5, -14, 0, 38), UDim2.new(0.5, 4, 0, 142), Theme.ButtonBlue, Theme.Accent); b.Parent = OthersPage end
+do local b = makeButton("ServerInfoBtn", "معلومات السيرفر", UDim2.new(1, -20, 0, 38), UDim2.new(0, 10, 0, 186), Theme.ButtonBlue, Theme.Accent); b.Parent = OthersPage end
 
 do
     local OthersScrollFrame = Instance.new("ScrollingFrame")
@@ -3662,7 +3695,7 @@ AntiAFK.btn.MouseButton1Click:Connect(function()
             end)
         end
     else
-        setButtonState(AntiAFK.btn, false, T18T("إيقاف مضاد افك"), T18T("مضاد افك"), Theme.ButtonDefault, Theme.ButtonGreen)
+        setButtonState(AntiAFK.btn, false, T18T("إيقاف مضاد افك"), T18T("مضاد افك"), Theme.ButtonBlue, Theme.Accent)
         if AntiAFK.conn then
             AntiAFK.conn:Disconnect()
             AntiAFK.conn = nil
@@ -3870,7 +3903,7 @@ _G.CuffProtectBtn.MouseButton1Click:Connect(function()
             end)
         end)
     else
-        setButtonState(_G.CuffProtectBtn, false, T18T("إيقاف الحماية"), T18T("حماية كلبشة"), Theme.ButtonDefault, Theme.ButtonOrange)
+        setButtonState(_G.CuffProtectBtn, false, T18T("إيقاف الحماية"), T18T("حماية كلبشة"), Theme.ButtonBlue, Theme.Accent)
 
         if _G.CuffProtectMoveConn then
             _G.CuffProtectMoveConn:Disconnect()
@@ -4019,14 +4052,6 @@ local function startTargetFling(target)
             return
         end
 
-        local targetRaisedEnough = targetFlingStartTargetY and currentTargetRoot.Position.Y > (targetFlingStartTargetY + 5)
-        local targetGoingUpFast = currentTargetRoot.AssemblyLinearVelocity.Y > 55
-        local activeLongEnough = (tick() - targetFlingStartTime) > 0.18
-
-        if activeLongEnough and (targetRaisedEnough or targetGoingUpFast) then
-            stopTargetFling(true)
-            return
-        end
 
         targetFlingAngle += math.rad(160)
         targetFlingPulse = (targetFlingPulse % 3) + 1
@@ -4433,7 +4458,6 @@ local function findTargetPlayer()
     if not targetName or #targetName < 3 then
         return nil
     end
-
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Name:lower():find(targetName:lower(), 1, true) then
             return player
@@ -4443,6 +4467,109 @@ local function findTargetPlayer()
     return nil
 end
 
+
+-- ====== إشعار دخول/خروج اللاعب المستهدف ======
+local function T18ShowPlayerToast(msg)
+    local TweenService = game:GetService("TweenService")
+    local toastGui = Instance.new("ScreenGui")
+    toastGui.Name             = "T18PlayerToast"
+    toastGui.ResetOnSpawn     = false
+    toastGui.ZIndexBehavior   = Enum.ZIndexBehavior.Sibling
+    toastGui.DisplayOrder     = 2147483647
+    toastGui.IgnoreGuiInset   = true
+    toastGui.Parent           = game:GetService("CoreGui")
+    local toast = Instance.new("Frame")
+    toast.Name                = "ToastFrame"
+    toast.AnchorPoint         = Vector2.new(1, 1)
+    toast.Size                = UDim2.new(0, 230, 0, 64)
+    toast.Position            = UDim2.new(1, 270, 1, -24)
+    toast.BackgroundColor3    = Color3.fromRGB(10, 10, 10)
+    toast.BackgroundTransparency = 0
+    toast.BorderSizePixel     = 0
+    toast.ZIndex              = 10
+    toast.Parent              = toastGui
+    local _tc = Instance.new("UICorner")
+    _tc.CornerRadius = UDim.new(0, 10)
+    _tc.Parent = toast
+    local _ts = Instance.new("UIStroke")
+    _ts.Color        = Color3.fromRGB(58, 58, 58)
+    _ts.Thickness    = 1
+    _ts.Transparency = 0
+    _ts.Parent       = toast
+    local accentBar = Instance.new("Frame")
+    accentBar.Size             = UDim2.new(0, 3, 0.65, 0)
+    accentBar.AnchorPoint      = Vector2.new(0, 0.5)
+    accentBar.Position         = UDim2.new(0, 9, 0.5, 0)
+    accentBar.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+    accentBar.BorderSizePixel  = 0
+    accentBar.ZIndex           = 11
+    accentBar.Parent           = toast
+    local _ac = Instance.new("UICorner")
+    _ac.CornerRadius = UDim.new(0, 4)
+    _ac.Parent = accentBar
+    local titleLbl = Instance.new("TextLabel")
+    titleLbl.Size                 = UDim2.new(1, -28, 0, 22)
+    titleLbl.Position             = UDim2.new(0, 20, 0, 8)
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Text                 = "t_18"
+    titleLbl.TextColor3           = Color3.fromRGB(255, 255, 255)
+    titleLbl.TextXAlignment       = Enum.TextXAlignment.Right
+    titleLbl.Font                 = Enum.Font.GothamBold
+    titleLbl.TextSize             = 14
+    titleLbl.ZIndex               = 11
+    titleLbl.Parent               = toast
+    local msgLbl = Instance.new("TextLabel")
+    msgLbl.Size                 = UDim2.new(1, -28, 0, 18)
+    msgLbl.Position             = UDim2.new(0, 20, 0, 34)
+    msgLbl.BackgroundTransparency = 1
+    msgLbl.Text                 = msg
+    msgLbl.TextColor3           = Color3.fromRGB(170, 170, 170)
+    msgLbl.TextXAlignment       = Enum.TextXAlignment.Right
+    msgLbl.Font                 = Enum.Font.Gotham
+    msgLbl.TextSize             = 12
+    msgLbl.ZIndex               = 11
+    msgLbl.Parent               = toast
+    TweenService:Create(toast,
+        TweenInfo.new(0.32, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+        { Position = UDim2.new(1, -16, 1, -24) }
+    ):Play()
+    task.delay(7.0, function()
+        local fadeOut = TweenService:Create(toast,
+            TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+            { Position = UDim2.new(1, 270, 1, -24), BackgroundTransparency = 1 }
+        )
+        TweenService:Create(titleLbl,  TweenInfo.new(0.4), { TextTransparency = 1 }):Play()
+        TweenService:Create(msgLbl,    TweenInfo.new(0.4), { TextTransparency = 1 }):Play()
+        TweenService:Create(accentBar, TweenInfo.new(0.4), { BackgroundTransparency = 1 }):Play()
+        TweenService:Create(_ts,       TweenInfo.new(0.4), { Transparency = 1 }):Play()
+        fadeOut:Play()
+        fadeOut.Completed:Connect(function()
+            pcall(function() toastGui:Destroy() end)
+        end)
+    end)
+end
+
+local _T18TargetSavedName = ""
+
+Players.PlayerRemoving:Connect(function(player)
+    local inputText = Input and Input.Text or ""
+    if inputText ~= "" and player.Name:lower():find(inputText:lower(), 1, true) then
+        _T18TargetSavedName = Input.Text
+        Input.Text = ""
+        T18ShowPlayerToast("خرج اللاعب: " .. player.Name)
+    end
+end)
+
+Players.PlayerAdded:Connect(function(player)
+    if _T18TargetSavedName ~= "" and player.Name:lower():find(_T18TargetSavedName:lower(), 1, true) then
+        if Input and Input.Text == "" then
+            Input.Text = _T18TargetSavedName
+            _T18TargetSavedName = ""
+            T18ShowPlayerToast("دخل اللاعب من جديد: " .. player.Name)
+        end
+    end
+end)
+-- ====== نهاية إشعار دخول/خروج اللاعب ======
 -- ====== دوال التعليق التلقائي ======
 -- _Hang declared at top
 
@@ -5552,7 +5679,8 @@ end)()
         sg.Name = "T18FPSPing"
         sg.ResetOnSpawn = false
         sg.IgnoreGuiInset = true
-        sg.Parent = playerGui
+        sg.DisplayOrder = 2147483647
+        sg.Parent = game:GetService("CoreGui")
         FPSPingGui = sg
         local frame = Instance.new("Frame")
         frame.Size = UDim2.new(0, 130, 0, 52)
@@ -5631,7 +5759,8 @@ end)()
             sg.Name = "T18ServerInfo"
             sg.ResetOnSpawn = false
             sg.IgnoreGuiInset = true
-            sg.Parent = playerGui
+            sg.DisplayOrder = 2147483647
+            sg.Parent = game:GetService("CoreGui")
             ServerInfoGui = sg
 
             local panel = Instance.new("Frame")
