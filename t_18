@@ -331,6 +331,7 @@ local targetFlingPulse = 0
 local targetFlingStartTargetY = nil
 local targetFlingStartTime = 0
 local SpeedActive = false
+local _HeadBang = {active=false, conn=nil, animTrack=nil, angle=0}
 local resetCooldown = false
 
 
@@ -899,11 +900,11 @@ do
     TopBadgeText.Size = UDim2.new(1, -34, 1, 0)
     TopBadgeText.Position = UDim2.new(0, 28, 0, 0)
     TopBadgeText.BackgroundTransparency = 1
-    TopBadgeText.Text = "عندك مشكلة؟ تواصل دس"
+    TopBadgeText.Text = "عندك مشكلة؟ تواصل دسكورد"
     TopBadgeText.TextColor3 = Theme.Text
     TopBadgeText.TextXAlignment = Enum.TextXAlignment.Left
     TopBadgeText.Font = Enum.Font.GothamMedium
-    TopBadgeText.TextSize = 13
+    TopBadgeText.TextScaled = true
     TopBadgeText.Parent = TopBadge
 
     local ProfileCard = Instance.new("Frame")
@@ -1023,6 +1024,19 @@ makeCorner(Input, 12)
 makeStroke(Input, Theme.Border, 1, 0.2)
 applyClickToClear(Input)
 
+-- إكمال تلقائي عند الضغط على Enter
+Input.FocusLost:Connect(function(enterPressed)
+    if not enterPressed then return end
+    local typed = Input.Text
+    if not typed or #typed < 1 then return end
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Name:lower():find(typed:lower(), 1, true) then
+            Input.Text = player.Name
+            break
+        end
+    end
+end)
+
 local function makeButton(name, text, size, position, baseColor, accentColor)
     local button = Instance.new("TextButton")
     local resolvedBase = baseColor or Theme.ButtonDefault
@@ -1114,6 +1128,7 @@ SpeedLabel.Parent = ContentPanel
 
 TeleportBtn = makeButton("TeleportBtn", "تنقل", UDim2.new(0, 168, 0, 38), UDim2.new(0, 4, 0, 274), Theme.ButtonBlue, Theme.Accent)
 SpectateBtn = makeButton("SpectateBtn", "مشاهدة", UDim2.new(0, 168, 0, 38), UDim2.new(0, 190, 0, 274), Theme.ButtonBlue, Theme.Accent)
+HeadBangBtn = makeButton("HeadBangBtn", "هيد بانق", UDim2.new(0, 168, 0, 38), UDim2.new(0, 4, 0, 274), Theme.ButtonBlue, Theme.Accent)
 SavePlaceBtn  = makeButton("SavePlaceBtn",  "حفظ مكاني", UDim2.new(0, 168, 0, 38), UDim2.new(1, -172, 0, 274), Theme.ButtonBlue, Theme.Accent)
 HangAutoBtn   = makeButton("HangAutoBtn",   "تعليق",     UDim2.new(0, 168, 0, 38), UDim2.new(0, 4,    0, 274), Theme.ButtonBlue, Theme.Accent)
 _Hang.freezeBtn     = makeButton("FreezeOnlyBtn","تجميد",     UDim2.new(0, 168, 0, 38), UDim2.new(0, 4,    0, 274), Theme.ButtonBlue, Theme.Accent)
@@ -2741,8 +2756,8 @@ ResetBtn.Size = UDim2.new(0.5, -14, 0, 38)
 ResetBtn.Position = UDim2.new(0.5, 4, 0, 188)
 
 FlingBtn.Parent = TargetPage
-FlingBtn.Size = UDim2.new(0.5, -14, 0, 38)
-FlingBtn.Position = UDim2.new(0, 10, 0, 144)
+FlingBtn.Size = UDim2.new(1, -20, 0, 38)
+FlingBtn.Position = UDim2.new(0, 10, 0, 232)
 
 TargetFlingBtn.Parent = TargetPage
 TargetFlingBtn.Size = UDim2.new(0.5, -14, 0, 38)
@@ -2756,16 +2771,20 @@ SpectateBtn.Parent = TargetPage
 SpectateBtn.Size = UDim2.new(0.5, -14, 0, 38)
 SpectateBtn.Position = UDim2.new(0.5, 4, 0, 100)
 
+HeadBangBtn.Parent = TargetPage
+HeadBangBtn.Size = UDim2.new(0.5, -14, 0, 38)
+HeadBangBtn.Position = UDim2.new(0, 10, 0, 144)
+
 
 HangAutoBtn.Parent = TargetPage
 HangAutoBtn.Size = UDim2.new(0.5, -14, 0, 38)
-HangAutoBtn.Position = UDim2.new(0.5, 4, 0, 254)
+HangAutoBtn.Position = UDim2.new(0.5, 4, 0, 298)
 
 -- رسالة "اوامر شاليه محمد" فوق صف تعليق وتجميد
 do
     local shaliLabel = Instance.new("TextLabel")
     shaliLabel.Size = UDim2.new(1, -20, 0, 20)
-    shaliLabel.Position = UDim2.new(0, 10, 0, 232)
+    shaliLabel.Position = UDim2.new(0, 10, 0, 276)
     shaliLabel.BackgroundTransparency = 1
     shaliLabel.Text = "اوامر شاليه محمد"
     shaliLabel.TextColor3 = Color3.fromRGB(180, 20, 30)
@@ -2777,20 +2796,20 @@ end
 
 _Hang.freezeBtn.Parent   = TargetPage
 _Hang.freezeBtn.Size     = UDim2.new(0.5, -14, 0, 38)
-_Hang.freezeBtn.Position = UDim2.new(0,    10,  0, 254)
+_Hang.freezeBtn.Position = UDim2.new(0,    10,  0, 298)
 
 _Hang.cuffBtn.Parent   = TargetPage
 _Hang.cuffBtn.Size     = UDim2.new(0.5, -14, 0, 38)
-_Hang.cuffBtn.Position = UDim2.new(0,    10, 0, 298)
+_Hang.cuffBtn.Position = UDim2.new(0,    10, 0, 342)
 
 _Hang.pullBtn.Parent   = TargetPage
 _Hang.pullBtn.Size     = UDim2.new(0.5, -14, 0, 38)
-_Hang.pullBtn.Position = UDim2.new(0.5,   4,  0, 298)
+_Hang.pullBtn.Position = UDim2.new(0.5,   4,  0, 342)
 
 -- حقل الـ prefix لـ HD Admin
 local HdPrefixLabel = Instance.new("TextLabel")
 HdPrefixLabel.Size = UDim2.new(1, -20, 0, 18)
-HdPrefixLabel.Position = UDim2.new(0, 10, 0, 344)
+HdPrefixLabel.Position = UDim2.new(0, 10, 0, 388)
 HdPrefixLabel.BackgroundTransparency = 1
 HdPrefixLabel.Text = "Prefix الـ HD (تلقائي أو يدوي)"
 HdPrefixLabel.TextColor3 = Theme.Muted
@@ -2802,7 +2821,7 @@ HdPrefixLabel.Parent = TargetPage
 local HdPrefixInput = Instance.new("TextBox")
 HdPrefixInput.Name = "HdPrefixInput"
 HdPrefixInput.Size = UDim2.new(0.38, -4, 0, 38)
-HdPrefixInput.Position = UDim2.new(0, 10, 0, 364)
+HdPrefixInput.Position = UDim2.new(0, 10, 0, 408)
 HdPrefixInput.BackgroundColor3 = Theme.Input
 HdPrefixInput.BackgroundTransparency = 0.2
 HdPrefixInput.PlaceholderText = "مثال: ,"
@@ -2835,7 +2854,7 @@ pcall(function()
     tryGet("HD_Admin","Settings","Prefix")
 end)
 
-local HdCopyBtn = makeButton("HdCopyBtn", "نسخ HD", UDim2.new(0.6, -14, 0, 38), UDim2.new(0.4, 4, 0, 364), Theme.ButtonBlue, Theme.Accent)
+local HdCopyBtn = makeButton("HdCopyBtn", "نسخ HD", UDim2.new(0.6, -14, 0, 38), UDim2.new(0.4, 4, 0, 408), Theme.ButtonBlue, Theme.Accent)
 HdCopyBtn.Parent = TargetPage
 
 
@@ -3580,101 +3599,29 @@ end)
 
 _G._HLBtn.MouseButton1Click:Connect(function()
     _G._HLA = not _G._HLA
-    local char = LocalPlayer.Character
-    local head = char and char:FindFirstChild("Head")
-    local hum  = char and char:FindFirstChildOfClass("Humanoid")
     if _G._HLA then
-        -- الطريقة 1: ApplyDescription (تتم replication للجميع عبر نظام الشخصية)
-        if hum then
-            pcall(function()
-                local desc = hum:GetAppliedDescription()
-                if desc then
-                    _G._HLOrigScale = desc.HeadScale
-                    desc.HeadScale = 0.001
-                    hum:ApplyDescription(desc)
-                end
-            end)
-            -- الطريقة 2: HeadScale NumberValue مباشرة (يتم replication مع network ownership)
-            pcall(function()
-                local hsv = hum:FindFirstChild("HeadScale")
-                if hsv then _G._HLOrigNV = hsv.Value; hsv.Value = 0 end
-            end)
-        end
-        -- الطريقة 3: تصغير حجم الرأس (Size property يتم replication مع character ownership)
-        if head then
-            pcall(function()
-                _G._HLOrigSize = head.Size
-                head.Size = Vector3.new(0.001, 0.001, 0.001)
-            end)
-        end
-        -- إخفاء محلي شامل
-        if head then
-            head.Transparency = 1
-            local face = head:FindFirstChildOfClass("Decal")
-            if face then face.Transparency = 1 end
-            for _, m in ipairs(head:GetChildren()) do
-                if m:IsA("SpecialMesh") then m.Scale = Vector3.new(0,0,0) end
-            end
-        end
-        setButtonState(_G._HLBtn, true, T18T("إيقاف هيدلس"), T18T("هيدلس"), Theme.Active, Theme.ButtonGreen)
-        -- حلقة تُبقي HeadScale=0 في حالة أعادها النظام
-        if _G._HLConn then _G._HLConn:Disconnect() end
-        _G._HLConn = RunService.Heartbeat:Connect(function()
-            if not _G._HLA then
-                _G._HLConn:Disconnect()
-                _G._HLConn = nil
-                return
-            end
-            pcall(function()
-                local hChar = LocalPlayer.Character
-                local hHum2 = hChar and hChar:FindFirstChildOfClass("Humanoid")
-                if hHum2 then
-                    local hsv2 = hHum2:FindFirstChild("HeadScale")
-                    if hsv2 and hsv2.Value > 0.001 then
-                        hsv2.Value = 0
-                    end
-                end
-                local hHead = hChar and hChar:FindFirstChild("Head")
-                if hHead then
-                    hHead.Transparency = 1
-                    local hFace = hHead:FindFirstChildOfClass("Decal")
-                    if hFace then hFace.Transparency = 1 end
-                    for _, m in ipairs(hHead:GetChildren()) do
-                        if m:IsA("SpecialMesh") then m.Scale = Vector3.new(0,0,0) end
-                    end
-                end
-            end)
+        -- تشغيل animation الهيدلس (تتزامن للناس تلقائياً)
+        pcall(function()
+            local char     = LocalPlayer.Character
+            local animator = char and char:FindFirstChildOfClass("Humanoid") and
+                             char:FindFirstChildOfClass("Humanoid"):FindFirstChildOfClass("Animator")
+            if not animator then return end
+            if _G._HLTrack then pcall(function() _G._HLTrack:Stop() end) end
+            local anim = Instance.new("Animation")
+            anim.AnimationId = "rbxassetid://102316572910864"
+            _G._HLTrack = animator:LoadAnimation(anim)
+            _G._HLTrack.Priority = Enum.AnimationPriority.Action
+            _G._HLTrack:Play()
         end)
+        setButtonState(_G._HLBtn, true, T18T("إيقاف هيدلس"), T18T("هيدلس"), Theme.Active, Theme.ButtonGreen)
     else
-        if _G._HLConn then _G._HLConn:Disconnect(); _G._HLConn = nil end
-        -- استعادة HeadScale عبر ApplyDescription
-        if hum then
-            pcall(function()
-                local desc = hum:GetAppliedDescription()
-                if desc then
-                    desc.HeadScale = _G._HLOrigScale or 1
-                    hum:ApplyDescription(desc)
-                end
-                _G._HLOrigScale = nil
-            end)
-            pcall(function()
-                local hsv = hum:FindFirstChild("HeadScale")
-                if hsv then hsv.Value = _G._HLOrigNV or 1; _G._HLOrigNV = nil end
-            end)
-        end
-        -- استعادة حجم الرأس
-        if head then
-            pcall(function()
-                head.Size = _G._HLOrigSize or Vector3.new(2, 1, 1)
-                _G._HLOrigSize = nil
-            end)
-            head.Transparency = 0
-            local face = head:FindFirstChildOfClass("Decal")
-            if face then face.Transparency = 0 end
-            for _, m in ipairs(head:GetChildren()) do
-                if m:IsA("SpecialMesh") then m.Scale = Vector3.new(1,1,1) end
+        -- إيقاف الـ animation وإرجاع الرأس
+        pcall(function()
+            if _G._HLTrack then
+                _G._HLTrack:Stop()
+                _G._HLTrack = nil
             end
-        end
+        end)
         setButtonState(_G._HLBtn, false, T18T("إيقاف هيدلس"), T18T("هيدلس"), Theme.Active, Theme.ButtonGreen)
     end
 end)
@@ -4047,8 +3994,12 @@ local function startTargetFling(target)
         local currentTargetRoot = currentTargetChar and currentTargetChar:FindFirstChild("HumanoidRootPart")
         local currentTargetHum = currentTargetChar and currentTargetChar:FindFirstChildOfClass("Humanoid")
 
-        if not myRoot or not myHum or myHum.Health <= 0 or not currentTargetRoot or not currentTargetHum or currentTargetHum.Health <= 0 then
+        if not myRoot or not myHum or myHum.Health <= 0 then
             stopTargetFling(true)
+            return
+        end
+        if not currentTargetRoot or not currentTargetHum or currentTargetHum.Health <= 0 then
+            -- الهدف مات أو ريسبون — انتظر حتى يعود
             return
         end
 
@@ -4104,7 +4055,7 @@ end
 
 local function startBang(target)
     isActive = true
-    setButtonState(BangBtn, true, T18T("إيقاف"), T18T("بانق"), Theme.Danger, Theme.PanelSoft)
+    setButtonState(BangBtn, true, T18T("إيقاف"), T18T("بانق"), Theme.Active, Theme.PanelSoft)
 
     local myChar = LocalPlayer.Character
     local hum = myChar and myChar:FindFirstChild("Humanoid")
@@ -4210,6 +4161,7 @@ BangBtn.MouseButton1Click:Connect(function()
         return
     end
 
+    if not Input.Text or #Input.Text < 3 then return end
     local targetName = Input.Text
     local target = nil
     for _, player in ipairs(Players:GetPlayers()) do
@@ -4223,6 +4175,146 @@ BangBtn.MouseButton1Click:Connect(function()
         startBang(target)
     else
         warn("Player not found: " .. targetName)
+    end
+end)
+
+local function stopHeadBang()
+    _HeadBang.active = false
+    if _HeadBang.conn then
+        _HeadBang.conn:Disconnect()
+        _HeadBang.conn = nil
+    end
+    if _HeadBang.animTrack then
+        _HeadBang.animTrack:Stop()
+        _HeadBang.animTrack = nil
+    end
+    pcall(function()
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.Sit = false
+            hum:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+        end
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if root then
+            local bv = root:FindFirstChild("HeadBangBV")
+            if bv then bv:Destroy() end
+        end
+        local animS = char and char:FindFirstChild("Animate")
+        if animS then animS.Disabled = false end
+    end)
+    setButtonState(HeadBangBtn, false, T18T("إيقاف"), T18T("هيد بانق"), Theme.Danger, Theme.PanelSoft)
+end
+
+local function startHeadBang(target)
+    _HeadBang.active = true
+    setButtonState(HeadBangBtn, true, T18T("إيقاف"), T18T("هيد بانق"), Theme.Active, Theme.PanelSoft)
+
+    local myChar = LocalPlayer.Character
+    local hum = myChar and myChar:FindFirstChild("Humanoid")
+    if hum then
+        pcall(function()
+            local animS = myChar:FindFirstChild("Animate")
+            if animS then animS.Disabled = true end
+            hum:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+            hum:ChangeState(Enum.HumanoidStateType.Running)
+        end)
+        pcall(function()
+            local bundle = game:GetObjects("rbxassetid://120512834137418")
+            for _, obj in ipairs(bundle) do
+                if obj:IsA("Animation") then
+                    _HeadBang.animTrack = hum:LoadAnimation(obj)
+                    _HeadBang.animTrack.Looped = true
+                    _HeadBang.animTrack.Priority = Enum.AnimationPriority.Action4
+                    _HeadBang.animTrack:Play(0.1, 1, 5)
+                    return
+                end
+            end
+        end)
+    end
+
+    local savedSpeed = nil
+
+    _HeadBang.conn = RunService.Heartbeat:Connect(function()
+        if not _HeadBang.active then return end
+
+        pcall(function()
+            local myCharacter = LocalPlayer.Character
+            local bangHum = myCharacter and myCharacter:FindFirstChildOfClass("Humanoid")
+            local root = myCharacter and myCharacter:FindFirstChild("HumanoidRootPart")
+            if not root or not bangHum then return end
+
+            if not savedSpeed or savedSpeed == 0 then
+                if bangHum.WalkSpeed > 0 then savedSpeed = bangHum.WalkSpeed end
+            end
+            bangHum.Sit = true
+
+            local bv = root:FindFirstChild("HeadBangBV")
+            if not bv then
+                bv = Instance.new("BodyVelocity")
+                bv.Name = "HeadBangBV"
+                bv.Velocity = Vector3.zero
+                bv.MaxForce = Vector3.new(1e5, 0, 1e5)
+                bv.Parent = root
+            end
+
+            local speed = (savedSpeed or 16)
+            local cf = workspace.CurrentCamera.CFrame
+            local fwd = Vector3.new(cf.LookVector.X, 0, cf.LookVector.Z)
+            local rgt = Vector3.new(cf.RightVector.X, 0, cf.RightVector.Z)
+            if fwd.Magnitude > 0 then fwd = fwd.Unit end
+            if rgt.Magnitude > 0 then rgt = rgt.Unit end
+            local vel = Vector3.zero
+            local focusedBox = UserInputService:GetFocusedTextBox()
+            if not focusedBox then
+                if UserInputService:IsKeyDown(Enum.KeyCode.W) then vel += fwd end
+                if UserInputService:IsKeyDown(Enum.KeyCode.S) then vel -= fwd end
+                if UserInputService:IsKeyDown(Enum.KeyCode.A) then vel -= rgt end
+                if UserInputService:IsKeyDown(Enum.KeyCode.D) then vel += rgt end
+            end
+            if isTouchDevice and bangHum.MoveDirection.Magnitude > 0 then
+                local md = bangHum.MoveDirection
+                vel += Vector3.new(md.X, 0, md.Z)
+            end
+            bv.Velocity = vel.Magnitude > 0 and vel.Unit * speed or Vector3.zero
+        end)
+
+        -- شخصيتي تواجه نفس اتجاه رأس الهدف
+        local myCharacter = LocalPlayer.Character
+        local targetCharacter = target.Character
+        if myCharacter and targetCharacter then
+            local myRoot = myCharacter:FindFirstChild("HumanoidRootPart")
+            local targetHead = targetCharacter:FindFirstChild("Head")
+            local targetRoot = targetCharacter:FindFirstChild("HumanoidRootPart")
+            local pivot = targetHead or targetRoot
+            if myRoot and pivot then
+                -- نبضة: قدام ثم رجوع بسيط كل 0.2 ثانية
+                local phase = math.floor(tick() / 0.1) % 2
+                local zOff = phase == 0 and -1.0 or -1.45
+                myRoot.CFrame = pivot.CFrame * CFrame.new(0, 1.5, zOff) * CFrame.Angles(0, math.pi, 0)
+            end
+        end
+    end)
+end
+
+HeadBangBtn.MouseButton1Click:Connect(function()
+    if _HeadBang.active then
+        stopHeadBang()
+        return
+    end
+    if not Input.Text or #Input.Text < 3 then return end
+    local targetName = Input.Text
+    local target = nil
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Name:lower():find(targetName:lower(), 1, true) then
+            target = player
+            break
+        end
+    end
+    if target and target.Character then
+        startHeadBang(target)
+    else
+        warn("Player not found: " .. tostring(targetName))
     end
 end)
 
@@ -4453,11 +4545,15 @@ TeleportBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+
 local function findTargetPlayer()
     local targetName = Input.Text
     if not targetName or #targetName < 3 then
         return nil
     end
+
+
+
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Name:lower():find(targetName:lower(), 1, true) then
             return player
@@ -4466,6 +4562,8 @@ local function findTargetPlayer()
 
     return nil
 end
+
+
 
 
 -- ====== إشعار دخول/خروج اللاعب المستهدف ======
@@ -5323,8 +5421,7 @@ local function startSpectate(target)
         end
 
         if not char or not hum or not root or hum.Health <= 0 then
-            showSpectateWarning("المشاهدة توقفت، اللاعب غير متاح")
-            stopSpectate()
+            -- الهدف مات أو ريسبون — انتظر حتى يعود
             return
         end
 
@@ -6101,7 +6198,7 @@ _T18TR = {
     ["ايقاف النسخ"]                                  = "Stop Copy",
     ["Prefix الـ HD (تلقائي أو يدوي)"]               = "HD Prefix (Auto or Manual)",
     ["مثال: ,"]                                      = "Example: ,",
-    ["عندك مشكلة؟ تواصل دس"]                         = "Got a problem? Contact us",
+    ["عندك مشكلة؟ تواصل دسكورد"]                         = "Got a problem? Contact me on Discord.",
     ["شاركونا اقتراحاتكم على الدسكورد"]              = "Share feedback on Discord",
     ["شاركونا اقتراحاتكم على الدسكورد | اضغط الزر الصغير لإخفاء النافذة"] =
         "Share feedback on Discord | Press the small button to hide",
