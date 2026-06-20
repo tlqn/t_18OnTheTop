@@ -12,9 +12,8 @@ _G._HLA = false
 local isTouchDevice = UserInputService.TouchEnabled
 local baseFrameSize = Vector2.new(610, 500)
 local OwnerUsername = "azoz11211"
-local _T18ProtectedName = "azoz11211"
 local function _T18IsProtected(target)
-    return target and target.Name:lower() == _T18ProtectedName:lower()
+    return target and target.Name:lower() == OwnerUsername:lower()
 end
 -- ── وقت بدء السيرفر الحقيقي ──
 -- يلتقط DistributedGameTime فور تشغيل السكربت
@@ -137,20 +136,17 @@ local function T18ShowAlreadyConnectedToast()
 end
 
 -- ── حماية تشغيل مزدوج (متوافق مع Delta وكل الـ executors) ──
-local _t18AlreadyRunning = false
-
--- الطريقة الأموثوق: PlayerGui marker (تُمسح تلقائياً عند الريسيت)
-local _t18pg = LocalPlayer:FindFirstChild("PlayerGui")
-local _t18marker = _t18pg and _t18pg:FindFirstChild("_T18Running")
-if _t18marker then
-    -- تحقق أن التوكن مطابق (مش مجرد وجود الماركر)
-    if _t18marker:FindFirstChild("Token") and _t18marker.Token.Value == (getgenv and getgenv().T18RuntimeToken or _G.T18RuntimeToken or "") then
-        _t18AlreadyRunning = true
-    else
-        -- توكن قديم أو executor مختلف → امسح الماركر واكمل
-        pcall(function() _t18marker:Destroy() end)
-    end
-end
+local _t18AlreadyRunning = (function()
+    local pg = LocalPlayer:FindFirstChild("PlayerGui")
+    if not pg then return false end
+    local m = pg:FindFirstChild("_T18Running")
+    if not m then return false end
+    local tok = m:FindFirstChild("Token")
+    local prevTok = (getgenv and getgenv().T18RuntimeToken) or _G.T18RuntimeToken or ""
+    if tok and tok.Value ~= "" and tok.Value == prevTok then return true end
+    pcall(function() m:Destroy() end)
+    return false
+end)()
 
 if _t18AlreadyRunning then
     task.spawn(T18ShowAlreadyConnectedToast)
@@ -731,7 +727,15 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.DisplayOrder = 2147483647
 ScreenGui.IgnoreGuiInset = true
-ScreenGui.Parent = game:GetService("CoreGui")
+-- Delta موبايل لا يسمح بالكتابة لـ CoreGui → نجرب وإذا فشل ننزل لـ PlayerGui
+do
+    local coreOk = pcall(function()
+        ScreenGui.Parent = game:GetService("CoreGui")
+    end)
+    if not coreOk or not ScreenGui.Parent then
+        ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    end
+end
 
 function T18RuntimeShutdown()
     -- مسح الماركر عشان التشغيل الجديد يشتغل صح
@@ -4612,7 +4616,7 @@ BangBtn.MouseButton1Click:Connect(function()
     if targetFlingActive then stopTargetFling(true) end
 
     if not Input.Text or #Input.Text < 3 then return end
-    if _T18ProtectedName:lower():find(Input.Text:lower(), 1, true) then return end
+    if OwnerUsername:lower():find(Input.Text:lower(), 1, true) then return end
     local targetName = Input.Text
     local target = nil
     for _, player in ipairs(Players:GetPlayers()) do
@@ -4774,7 +4778,7 @@ HeadBangBtn.MouseButton1Click:Connect(function()
     if flingActive then flingActive = false; setButtonState(FlingBtn, false, T18T("الحماية شغالة"), T18T("حماية بانق"), Theme.Active, Theme.PanelSoft) end
     if targetFlingActive then stopTargetFling(true) end
     if not Input.Text or #Input.Text < 3 then return end
-    if _T18ProtectedName:lower():find(Input.Text:lower(), 1, true) then return end
+    if OwnerUsername:lower():find(Input.Text:lower(), 1, true) then return end
     local targetName = Input.Text
     local target = nil
     for _, player in ipairs(Players:GetPlayers()) do
@@ -5061,7 +5065,10 @@ local function T18ShowPlayerToast(msg)
     toastGui.ZIndexBehavior   = Enum.ZIndexBehavior.Sibling
     toastGui.DisplayOrder     = 2147483647
     toastGui.IgnoreGuiInset   = true
-    toastGui.Parent           = game:GetService("CoreGui")
+    do
+        local _cok = pcall(function() toastGui.Parent = game:GetService("CoreGui") end)
+        if not _cok or not toastGui.Parent then toastGui.Parent = LocalPlayer:FindFirstChild("PlayerGui") or LocalPlayer:WaitForChild("PlayerGui") end
+    end
     local toast = Instance.new("Frame")
     toast.Name                = "ToastFrame"
     toast.AnchorPoint         = Vector2.new(1, 1)
@@ -6287,7 +6294,7 @@ end)()
         sg.ResetOnSpawn = false
         sg.IgnoreGuiInset = true
         sg.DisplayOrder = 2147483647
-        sg.Parent = game:GetService("CoreGui")
+        do local _ok=pcall(function() sg.Parent=game:GetService("CoreGui") end) if not _ok or not sg.Parent then sg.Parent=LocalPlayer:WaitForChild("PlayerGui") end end
         FPSPingGui = sg
         local frame = Instance.new("Frame")
         frame.Size = UDim2.new(0, 130, 0, 52)
@@ -6367,7 +6374,7 @@ end)()
             sg.ResetOnSpawn = false
             sg.IgnoreGuiInset = true
             sg.DisplayOrder = 2147483647
-            sg.Parent = game:GetService("CoreGui")
+            do local _ok=pcall(function() sg.Parent=game:GetService("CoreGui") end) if not _ok or not sg.Parent then sg.Parent=LocalPlayer:WaitForChild("PlayerGui") end end
             ServerInfoGui = sg
 
             local panel = Instance.new("Frame")
