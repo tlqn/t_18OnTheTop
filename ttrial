@@ -194,7 +194,7 @@ end
 
 -- ====== T18 HTTP Relay (لا يمر بشات روبلوكس) ======
 -- ✅ سيرفر دائم لا ينام
-local T18_API_BASE = "http://localhost:3747/api/t18"
+local T18_API_BASE = "https://loose-ducks-stick.loca.lt/api/t18"
 local HttpService_T18 = game:GetService("HttpService")
 
 local function t18_getHttpFn()
@@ -1929,11 +1929,7 @@ local function trySendChatFromInput()
     if not txt or #txt == 0 then return end
     _Flags.chatCooldown = true
     local sent = sendChatToAll(txt)
-    if sent then
-        ChatInput.Text = ""
-    else
-        addChatMessage(T18T("النظام"), T18T("ما قدرت أرسل الرسالة — تأكد إن المُشغِّل يدعم HTTP"))
-    end
+    if sent then ChatInput.Text = "" end
     task.delay(0.8, function() _Flags.chatCooldown = false end)
 end
 
@@ -2547,7 +2543,7 @@ local function sendOwnerAdminAction(actionName)
 
     local sent = sendOwnerCommand(newAction, target.UserId)
     if not sent then
-        showNotification(T18T("ما قدرت أرسل الأمر — تأكد إن المُشغِّل يدعم HTTP"))
+        -- HTTP relay غير متاح (localhost) — نفشل بصمت
         return
     end
 
