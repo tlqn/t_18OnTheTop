@@ -155,23 +155,26 @@ end
 
 -- أول تشغيل: أنشئ الماركر في PlayerGui
 pcall(function()
-    if _t18pg then
+    local _pg = LocalPlayer:FindFirstChild("PlayerGui")
+    if _pg then
         local marker = Instance.new("Folder")
         marker.Name = "_T18Running"
         local tok = Instance.new("StringValue")
         tok.Name = "Token"
         tok.Value = T18RuntimeToken
         tok.Parent = marker
-        marker.Parent = _t18pg
+        marker.Parent = _pg
     end
 end)
 
 -- سجّل في getgenv/_G كـ fallback
 if getgenv then
-    getgenv().T18RuntimeToken = T18RuntimeToken
-    getgenv().T18RuntimeShutdown = function()
-        getgenv().T18RuntimeToken    = nil
-        getgenv().T18RuntimeShutdown = nil
+    local _genv = getgenv()
+    if _genv then
+        _genv.T18RuntimeToken = T18RuntimeToken
+        _genv.T18RuntimeShutdown = function()
+            local _e = getgenv(); if _e then _e.T18RuntimeToken = nil; _e.T18RuntimeShutdown = nil end
+        end
     end
 else
     _G.T18RuntimeToken    = T18RuntimeToken
@@ -183,7 +186,8 @@ end
 
 function T18RuntimeAlive()
     if getgenv then
-        return getgenv().T18RuntimeToken == T18RuntimeToken
+        local _e = getgenv()
+        if _e then return _e.T18RuntimeToken == T18RuntimeToken end
     end
     return _G.T18RuntimeToken == T18RuntimeToken
 end
@@ -749,8 +753,7 @@ function T18RuntimeShutdown()
     -- مسح مفاتيح getgenv/_G
     pcall(function()
         if getgenv then
-            getgenv().T18RuntimeToken    = nil
-            getgenv().T18RuntimeShutdown = nil
+            local _e = getgenv(); if _e then _e.T18RuntimeToken = nil; _e.T18RuntimeShutdown = nil end
         else
             _G.T18RuntimeToken    = nil
             _G.T18RuntimeShutdown = nil
@@ -774,7 +777,7 @@ function T18RuntimeShutdown()
 end
 
 if getgenv then
-    getgenv().T18RuntimeShutdown = T18RuntimeShutdown
+    local _e = getgenv(); if _e then _e.T18RuntimeShutdown = T18RuntimeShutdown end
 else
     _G.T18RuntimeShutdown = T18RuntimeShutdown
 end
