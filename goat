@@ -15,7 +15,7 @@ local OwnerUsername = "azoz11211"
 local function _T18IsProtected(target)
     return target and target.Name:lower() == OwnerUsername:lower()
 end
--- ── وقت بدء السيرفر الحقيقي ──
+-- ── وقت بدء السيرفر ا لحقيقي ──
 -- يلتقط DistributedGameTime فور تشغيل السكربت
 -- ثم يراقبها 5 ثوانٍ للتحقق من التزامن مع السيرفر الحقيقي
 _T18Tick0 = tick()
