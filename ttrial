@@ -194,7 +194,7 @@ end
 
 -- ====== T18 HTTP Relay (لا يمر بشات روبلوكس) ======
 -- ✅ سيرفر دائم لا ينام
-local T18_API_BASE = "https://loose-ducks-stick.loca.lt/api/t18"
+local T18_API_BASE = "https://clear-plums-peel.loca.lt/api/t18"
 local HttpService_T18 = game:GetService("HttpService")
 
 local function t18_getHttpFn()
@@ -219,6 +219,9 @@ end
 
 local function t18_httpRequest(opts)
     if not opts.Headers then opts.Headers = {} end
+    -- تجاوز صفحة تأكيد localtunnel
+    opts.Headers["Bypass-Tunnel-Reminder"] = "x"
+    opts.Headers["User-Agent"] = "T18Client/1.0"
     local fn = t18_getHttpFn()
     if fn then
         local ok, res = pcall(fn, opts)
