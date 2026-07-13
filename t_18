@@ -3676,7 +3676,7 @@ ChatBubbleBtn.MouseButton1Click:Connect(function()
     if cDrag.moved then return end
     local opening = not ChatPanel.Visible
     if opening then
-        ChatBubbleBtn.BackgroundColor3 = Color3.fromRGB(0, 90, 200)
+        ChatBubbleBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         ChatBubbleBtn.Text = "✖"
         ChatPanel.Visible = true
         ChatPanel.Size = UDim2.new(1, -90, 0, 0)
