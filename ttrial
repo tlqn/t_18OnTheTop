@@ -6959,8 +6959,8 @@ local VC_SERVER  = "https://simulation-providence-crossword-albums.trycloudflare
 local VC_ROOM    = "default"
 
 -- ── حساسية المسافة (بوحدات Roblox studs) ──────────────────
-local VC_MAX_DIST = 50   -- يختفي الصوت عند هذه المسافة (عدّلها)
-local VC_MIN_DIST = 10   -- صوت كامل بهذه المسافة أو أقل  (عدّلها)
+local VC_MAX_DIST = 999  -- اختبار — بدون حد للمسافة (عدّلها لاحقاً)
+local VC_MIN_DIST = 0    -- اختبار
 
 -- ───────────────────────────────────────────────────────────
 local VC_USER  = LocalPlayer.Name
