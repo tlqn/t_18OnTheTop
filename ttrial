@@ -6955,7 +6955,7 @@ end
 -- ════════════════════════════════════════════════════════════
 ;(function()
 
-local VC_SERVER  = "https://simulation-providence-crossword-albums.trycloudflare.com"
+local VC_SERVER  = "https://source-annually-enb-archived.trycloudflare.com"
 local VC_ROOM    = "default"
 
 -- ── حساسية المسافة (بوحدات Roblox studs) ──────────────────
@@ -6972,15 +6972,25 @@ local httpReq = request or http_request
     or (syn and syn.request)
     or (http and http.request)
     or (fluxus and fluxus.request)
+    or (cloneref and cloneref(game:GetService("HttpService")) and nil)
     or nil
+
+local VC_HEADERS = {
+    ["Content-Type"]  = "application/json",
+    ["Accept"]        = "application/json",
+    ["User-Agent"]    = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+}
 
 local function vcGet(path)
     if not httpReq then return nil end
     local ok, res = pcall(httpReq, {
-        Url = VC_BASE .. path, Method = "GET",
-        Headers = { ["Content-Type"] = "application/json" },
+        Url     = VC_BASE .. path,
+        Method  = "GET",
+        Headers = VC_HEADERS,
     })
-    if not ok or not res or res.StatusCode ~= 200 then return nil end
+    if not ok or not res then return nil end
+    local code = tonumber(res.StatusCode) or 0
+    if code < 200 or code > 299 then return nil end
     local ok2, d = pcall(function() return HttpService_VC:JSONDecode(res.Body) end)
     return ok2 and d or nil
 end
@@ -6988,9 +6998,10 @@ end
 local function vcPost(path, payload)
     if not httpReq then return end
     pcall(httpReq, {
-        Url = VC_BASE .. path, Method = "POST",
-        Headers = { ["Content-Type"] = "application/json" },
-        Body = HttpService_VC:JSONEncode(payload),
+        Url     = VC_BASE .. path,
+        Method  = "POST",
+        Headers = VC_HEADERS,
+        Body    = HttpService_VC:JSONEncode(payload),
     })
 end
 
