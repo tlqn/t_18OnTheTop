@@ -191,7 +191,7 @@ function T18RuntimeAlive()
 end
 
 
-local T18_API_BASE = "https://quantum-veterans-collectables-anthropology.trycloudflare.com/api/t18"
+local T18_API_BASE = "https://list-wait-behind-fragrances.trycloudflare.com/api/t18"
 local HttpService_T18 = game:GetService("HttpService")
 
 local function t18_getHttpFn()
@@ -6948,3 +6948,279 @@ end
       T18MarkActive("ar")
   end
   
+
+-- ════════════════════════════════════════════════════════════
+--  🎙️  T18 Voice Chat v3 — Distance Attenuation
+--  غيّر VC_SERVER وVC_MAX_DIST حسب ما تريد
+-- ════════════════════════════════════════════════════════════
+;(function()
+
+local VC_SERVER  = "https://simulation-providence-crossword-albums.trycloudflare.com"
+local VC_ROOM    = "default"
+
+-- ── حساسية المسافة (بوحدات Roblox studs) ──────────────────
+local VC_MAX_DIST = 50   -- يختفي الصوت عند هذه المسافة (عدّلها)
+local VC_MIN_DIST = 10   -- صوت كامل بهذه المسافة أو أقل  (عدّلها)
+
+-- ───────────────────────────────────────────────────────────
+local VC_USER  = LocalPlayer.Name
+local VC_BASE  = VC_SERVER
+local _running = true
+local HttpService_VC = game:GetService("HttpService")
+
+local httpReq = request or http_request
+    or (syn and syn.request)
+    or (http and http.request)
+    or (fluxus and fluxus.request)
+    or nil
+
+local function vcGet(path)
+    if not httpReq then return nil end
+    local ok, res = pcall(httpReq, {
+        Url = VC_BASE .. path, Method = "GET",
+        Headers = { ["Content-Type"] = "application/json" },
+    })
+    if not ok or not res or res.StatusCode ~= 200 then return nil end
+    local ok2, d = pcall(function() return HttpService_VC:JSONDecode(res.Body) end)
+    return ok2 and d or nil
+end
+
+local function vcPost(path, payload)
+    if not httpReq then return end
+    pcall(httpReq, {
+        Url = VC_BASE .. path, Method = "POST",
+        Headers = { ["Content-Type"] = "application/json" },
+        Body = HttpService_VC:JSONEncode(payload),
+    })
+end
+
+local VC_URL = VC_BASE .. "/voice?user=" .. VC_USER .. "&room=" .. VC_ROOM
+
+local function vcOpenBrowser()
+    pcall(function() GuiService:OpenBrowserWindow(VC_URL) end)
+    pcall(function()
+        if shell then shell('start "" "' .. VC_URL .. '"')
+        elseif os and os.execute then os.execute('start "" "' .. VC_URL .. '"') end
+    end)
+    pcall(function()
+        if setclipboard then setclipboard(VC_URL)
+        elseif Clipboard and Clipboard.set then Clipboard.set(VC_URL) end
+    end)
+end
+
+-- ── إرسال الموقع كل 0.3 ثانية ────────────────────────────
+task.spawn(function()
+    while _running do
+        local char = LocalPlayer.Character
+        if char then
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local p = hrp.Position
+                vcPost("/position", {
+                    room = VC_ROOM,
+                    user = VC_USER,
+                    x    = math.floor(p.X * 10) / 10,
+                    y    = math.floor(p.Y * 10) / 10,
+                    z    = math.floor(p.Z * 10) / 10,
+                })
+            end
+        end
+        task.wait(0.3)
+    end
+end)
+
+-- ── واجهة Voice Chat ──────────────────────────────────────
+local sg = Instance.new("ScreenGui")
+sg.Name = "T18VoiceGui"; sg.ResetOnSpawn = false
+sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling; sg.DisplayOrder = 999
+pcall(function() sg.Parent = LocalPlayer.PlayerGui end)
+if not sg.Parent then
+    pcall(function() sg.Parent = game:GetService("CoreGui") end)
+end
+
+local card = Instance.new("Frame", sg)
+card.Name = "VCard"
+card.Size = UDim2.new(0, 210, 0, 0); card.AutomaticSize = Enum.AutomaticSize.Y
+card.Position = UDim2.new(1, -225, 0.5, -100)
+card.BackgroundColor3 = Color3.fromRGB(8, 10, 24)
+card.BackgroundTransparency = 0.06; card.BorderSizePixel = 0; card.ZIndex = 10
+Instance.new("UICorner", card).CornerRadius = UDim.new(0, 16)
+local sk = Instance.new("UIStroke", card)
+sk.Color = Color3.fromRGB(99,102,241); sk.Thickness = 1.5; sk.Transparency = 0.35
+local layout = Instance.new("UIListLayout", card)
+layout.SortOrder = Enum.SortOrder.LayoutOrder; layout.Padding = UDim.new(0,6)
+local pad = Instance.new("UIPadding", card)
+pad.PaddingTop=UDim.new(0,11); pad.PaddingBottom=UDim.new(0,11)
+pad.PaddingLeft=UDim.new(0,11); pad.PaddingRight=UDim.new(0,11)
+
+local function lbl(txt, sz, col, order, parent)
+    local l = Instance.new("TextLabel", parent or card)
+    l.LayoutOrder = order; l.Size = UDim2.new(1,0,0,sz)
+    l.BackgroundTransparency = 1; l.Text = txt
+    l.TextColor3 = col; l.Font = Enum.Font.GothamBold
+    l.TextSize = sz; l.TextXAlignment = Enum.TextXAlignment.Right
+    l.TextTruncate = Enum.TextTruncate.AtEnd
+    return l
+end
+
+lbl("🎙️  Voice Chat", 13, Color3.fromRGB(165,180,252), 1)
+
+-- شريط الحالة
+local stBar = Instance.new("Frame", card); stBar.LayoutOrder=2
+stBar.Size = UDim2.new(1,0,0,28); stBar.BackgroundColor3=Color3.fromRGB(18,22,48)
+stBar.BackgroundTransparency=0.2; stBar.BorderSizePixel=0
+Instance.new("UICorner",stBar).CornerRadius=UDim.new(0,8)
+local stDot = Instance.new("Frame",stBar)
+stDot.Size=UDim2.new(0,8,0,8); stDot.Position=UDim2.new(1,-11,0.5,-4)
+stDot.BackgroundColor3=Color3.fromRGB(239,68,68); stDot.BorderSizePixel=0
+Instance.new("UICorner",stDot).CornerRadius=UDim.new(0,999)
+local stLbl = Instance.new("TextLabel",stBar)
+stLbl.Size=UDim2.new(1,-20,1,0); stLbl.Position=UDim2.new(0,7,0,0)
+stLbl.BackgroundTransparency=1; stLbl.Text="⏳ جاري التحقق..."
+stLbl.TextColor3=Color3.fromRGB(148,163,184); stLbl.Font=Enum.Font.Gotham
+stLbl.TextSize=11; stLbl.TextXAlignment=Enum.TextXAlignment.Right
+stLbl.TextTruncate=Enum.TextTruncate.AtEnd
+
+-- معلومة المسافة
+local distLbl = lbl("📍 نطاق: "..VC_MAX_DIST.." stud", 10, Color3.fromRGB(71,85,105), 3)
+
+-- زر فتح المايك
+local openBtn = Instance.new("TextButton",card); openBtn.LayoutOrder=4
+openBtn.Size=UDim2.new(1,0,0,30); openBtn.BackgroundColor3=Color3.fromRGB(99,102,241)
+openBtn.BackgroundTransparency=0.1; openBtn.Text="🌐  افتح المايك"
+openBtn.TextColor3=Color3.fromRGB(255,255,255); openBtn.Font=Enum.Font.GothamBold
+openBtn.TextSize=12; openBtn.AutoButtonColor=false; openBtn.BorderSizePixel=0
+Instance.new("UICorner",openBtn).CornerRadius=UDim.new(0,9)
+
+-- رابط للنسخ
+local urlLbl = Instance.new("TextLabel",card); urlLbl.LayoutOrder=5
+urlLbl.Size=UDim2.new(1,0,0,0); urlLbl.AutomaticSize=Enum.AutomaticSize.Y
+urlLbl.BackgroundColor3=Color3.fromRGB(15,18,37); urlLbl.BackgroundTransparency=0.3
+urlLbl.BorderSizePixel=0
+urlLbl.Text="🔗 " .. VC_URL
+urlLbl.TextColor3=Color3.fromRGB(129,140,248); urlLbl.Font=Enum.Font.Gotham
+urlLbl.TextSize=9; urlLbl.TextXAlignment=Enum.TextXAlignment.Right
+urlLbl.TextWrapped=true; urlLbl.Visible=false
+Instance.new("UICorner",urlLbl).CornerRadius=UDim.new(0,6)
+local urlPad=Instance.new("UIPadding",urlLbl)
+urlPad.PaddingLeft=UDim.new(0,5); urlPad.PaddingRight=UDim.new(0,5)
+urlPad.PaddingTop=UDim.new(0,4); urlPad.PaddingBottom=UDim.new(0,4)
+
+openBtn.MouseButton1Click:Connect(function()
+    vcOpenBrowser()
+    urlLbl.Visible = true
+    openBtn.Text="📋  نُسخ الرابط — افتحه بالمتصفح"
+    openBtn.BackgroundColor3=Color3.fromRGB(245,158,11)
+    task.delay(4, function()
+        openBtn.Text="🌐  افتح المايك"
+        openBtn.BackgroundColor3=Color3.fromRGB(99,102,241)
+    end)
+end)
+
+local div=Instance.new("Frame",card); div.LayoutOrder=6
+div.Size=UDim2.new(1,0,0,1); div.BackgroundColor3=Color3.fromRGB(55,65,110)
+div.BackgroundTransparency=0.5; div.BorderSizePixel=0
+
+lbl("يتكلمون الحين:", 11, Color3.fromRGB(71,85,105), 7)
+
+local spkFrame=Instance.new("Frame",card); spkFrame.LayoutOrder=8
+spkFrame.Size=UDim2.new(1,0,0,0); spkFrame.AutomaticSize=Enum.AutomaticSize.Y
+spkFrame.BackgroundTransparency=1; spkFrame.BorderSizePixel=0
+local sl=Instance.new("UIListLayout",spkFrame); sl.Padding=UDim.new(0,3)
+
+local emptyL=Instance.new("TextLabel",spkFrame); emptyL.Name="Empty"
+emptyL.Size=UDim2.new(1,0,0,18); emptyL.BackgroundTransparency=1
+emptyL.Text="لا أحد يتكلم"; emptyL.TextColor3=Color3.fromRGB(71,85,105)
+emptyL.Font=Enum.Font.Gotham; emptyL.TextSize=12
+emptyL.TextXAlignment=Enum.TextXAlignment.Right
+
+-- أزرار إغلاق / مصغّر
+local closeBtn=Instance.new("TextButton",card)
+closeBtn.Size=UDim2.new(0,20,0,20); closeBtn.Position=UDim2.new(0,4,0,4)
+closeBtn.BackgroundTransparency=1; closeBtn.Text="✕"
+closeBtn.TextColor3=Color3.fromRGB(71,85,105); closeBtn.Font=Enum.Font.GothamBold
+closeBtn.TextSize=12; closeBtn.ZIndex=11
+local mini=Instance.new("TextButton",sg)
+mini.Size=UDim2.new(0,36,0,36); mini.Position=UDim2.new(1,-52,0.5,-18)
+mini.BackgroundColor3=Color3.fromRGB(99,102,241); mini.BackgroundTransparency=0.2
+mini.Text="🎙️"; mini.TextSize=18; mini.Font=Enum.Font.GothamBold
+mini.AutoButtonColor=false; mini.ZIndex=9; mini.Visible=false
+Instance.new("UICorner",mini).CornerRadius=UDim.new(0,999)
+closeBtn.MouseButton1Click:Connect(function() card.Visible=false; mini.Visible=true end)
+mini.MouseButton1Click:Connect(function() card.Visible=true; mini.Visible=false end)
+
+-- ── تحديث المتكلمين مع لون الحجم ─────────────────────────
+local serverOk = false
+local function updateSpeakers(speakers)
+    for _,c2 in ipairs(spkFrame:GetChildren()) do
+        if c2:IsA("TextLabel") and c2.Name~="Empty" then c2:Destroy() end
+    end
+    local others={}
+    for _,n in ipairs(speakers) do
+        if n~=VC_USER then table.insert(others,n) end
+    end
+    emptyL.Visible = #others==0
+    for i,name in ipairs(others) do
+        -- احسب المسافة لعرض الحجم تقريبياً
+        local volTxt = ""
+        local myChar = LocalPlayer.Character
+        local tgPlayer = game:GetService("Players"):FindFirstChild(name)
+        if myChar and tgPlayer and tgPlayer.Character then
+            local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+            local tgHRP = tgPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if myHRP and tgHRP then
+                local dist = (myHRP.Position - tgHRP.Position).Magnitude
+                local vol  = math.clamp(1 - (dist - VC_MIN_DIST) / (VC_MAX_DIST - VC_MIN_DIST), 0, 1)
+                local pct  = math.floor(vol * 100)
+                local icon = pct > 60 and "🔊" or pct > 20 and "🔉" or "🔈"
+                volTxt = " " .. icon .. " " .. pct .. "%"
+            end
+        end
+        local r=Instance.new("TextLabel",spkFrame)
+        r.LayoutOrder=i; r.Size=UDim2.new(1,0,0,20)
+        r.BackgroundTransparency=1; r.Text="🟢  "..name..volTxt
+        r.TextColor3=Color3.fromRGB(34,197,94); r.Font=Enum.Font.GothamBold
+        r.TextSize=11; r.TextXAlignment=Enum.TextXAlignment.Right
+    end
+    if #speakers>0 then
+        local myTurn=false
+        for _,s in ipairs(speakers) do if s==VC_USER then myTurn=true; break end end
+        if myTurn then
+            stLbl.Text="🎙️ أنت تتكلم"; stLbl.TextColor3=Color3.fromRGB(34,197,94)
+            stDot.BackgroundColor3=Color3.fromRGB(34,197,94)
+        else
+            stLbl.Text="🔊 "..table.concat(speakers,", ")
+            stLbl.TextColor3=Color3.fromRGB(165,180,252)
+            stDot.BackgroundColor3=Color3.fromRGB(165,180,252)
+        end
+    else
+        stLbl.Text="✅ متصل"; stLbl.TextColor3=Color3.fromRGB(148,163,184)
+        stDot.BackgroundColor3=Color3.fromRGB(34,197,94)
+    end
+end
+
+-- ── polling كل 0.5 ثانية ─────────────────────────────────
+task.spawn(function()
+    while _running do
+        local data = vcGet("/status?room="..VC_ROOM)
+        if data and data.speakers then
+            if not serverOk then
+                serverOk=true
+                stLbl.Text="✅ متصل"; stDot.BackgroundColor3=Color3.fromRGB(34,197,94)
+            end
+            updateSpeakers(data.speakers)
+        else
+            if serverOk then
+                serverOk=false
+                stLbl.Text="❌ السيرفر غير متاح"
+                stLbl.TextColor3=Color3.fromRGB(239,68,68)
+                stDot.BackgroundColor3=Color3.fromRGB(239,68,68)
+            end
+        end
+        task.wait(0.5)
+    end
+end)
+
+task.delay(1, vcOpenBrowser)
+
+end)()
